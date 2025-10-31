@@ -7,7 +7,7 @@ import AvaImage from "../styles/ava.jpg";
 function Register() {
   return (
     <div className="container">
-      {/* Декоративне зображення 1: Дракони */}
+      {}
       <img 
         src={WedImage} 
         alt="Wedding" 
@@ -52,7 +52,7 @@ function Register() {
         </form>
       </div>
 
-      {/* Декоративне зображення 2: Олаф та Свен */}
+      {}
       <img 
         src={AvaImage} 
         alt="Avatar" 

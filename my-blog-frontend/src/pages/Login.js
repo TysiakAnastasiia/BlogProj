@@ -1,38 +1,63 @@
-import React from 'react';
-import '../styles/styles.css';
+import React, { useState } from "react";
+import "../styles/styles.css";
+import WedImage from "../styles/wed.jpg"; 
+import AvaImage from "../styles/ava.jpg";
+
 
 function Login() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log("Login:", { username, password });
+  };
+
   return (
     <div className="container">
-      {/* Декоративне зображення 1: Дракони */}
+      {}
       <img 
-        src="https://i.pinimg.com/originals/e7/3c/a1/e73ca1d279d493b8a12ff3570f43888c.jpg" 
-        alt="Toothless and Light Fury" 
+        src={WedImage} 
+        alt="Wedding" 
         className="deco-image image-top-left"
       />
 
       <div className="form-wrapper">
-        <h1 className="title">LOGIN</h1>
-        <form onSubmit={(e) => e.preventDefault()}>
-          
+        {}
+        <h1 className="title gradient-text">LOGIN</h1>
+        <form onSubmit={handleSubmit}>
           <div className="input-group">
             <label htmlFor="username">USERNAME</label>
-            <input type="text" id="username" />
+            <input
+              type="text"
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
           </div>
 
           <div className="input-group">
             <label htmlFor="password">PASSWORD</label>
-            <input type="password" id="password" />
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
           </div>
 
-          <button type="submit" className="submit-btn">SUBMIT</button>
+          <button type="submit" className="submit-btn">
+            LOGIN
+          </button>
         </form>
       </div>
 
-      {/* Декоративне зображення 2: Олаф та Свен */}
-       <img 
-        src="https://lumiere-a.akamaihd.net/v1/images/p_frozen2_19630_b33917a8.jpeg" 
-        alt="Olaf and Sven" 
+      {}
+      <img 
+        src={AvaImage} 
+        alt="Avatar" 
         className="deco-image image-bottom-right"
       />
     </div>
