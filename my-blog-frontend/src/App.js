@@ -2,8 +2,9 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import ProfilePage from "./pages/Profile"; 
-import ProfileEdit from "./pages/ProfileEdit";
+import { ProfilePage } from "./pages/Profile";
+import ProfileEdit from "./pages/ProfileEdit"; // default import
+import Dashboard from "./pages/Dashboard"; // default import
 
 function App() {
   return (
@@ -20,8 +21,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit" element={<ProfileEdit />} />
-
-          {/* Redirect root to login */}
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="*" element={<Login />} />
         </Routes>
       </div>
