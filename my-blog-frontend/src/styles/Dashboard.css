@@ -223,3 +223,49 @@
   object-fit: cover;
   border-radius: 15px;
 }
+
+/* --- Search Field --- */
+.search-container {
+  display: flex;
+  justify-content: center;
+  margin: 15px 0;
+}
+
+.search-input {
+  width: 100%;
+  max-width: 400px;
+  padding: 12px 40px 12px 15px;
+  border-radius: 25px;
+  border: 2px solid #ddd;
+  font-size: 1rem;
+  font-family: 'Montserrat', sans-serif;
+  transition: all 0.3s ease;
+  background-color: var(--box-bg);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  position: relative;
+}
+
+.search-input::placeholder {
+  color: var(--text-light);
+  font-weight: 500;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+}
+
+.search-container::before {
+  content: "🔍";
+  position: absolute;
+  left: calc(50% - 200px + 10px); /* враховуємо max-width */
+  font-size: 1.2rem;
+  color: var(--text-light);
+  pointer-events: none;
+  transition: left 0.3s ease;
+}
+
+.search-input:focus + .search-icon {
+  color: var(--accent-color);
+}
