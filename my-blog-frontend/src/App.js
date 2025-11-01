@@ -5,6 +5,7 @@ import Register from "./pages/Register";
 import { ProfilePage } from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit"; // default import
 import Dashboard from "./pages/Dashboard"; // default import
+import NotFound from "./pages/NotFound";
 
 function App() {
   return (
@@ -22,7 +23,9 @@ function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit" element={<ProfileEdit />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="*" element={<Login />} />
+          
+          {/* Catch-all route for 404 */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
     </Router>
