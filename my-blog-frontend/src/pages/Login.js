@@ -1,21 +1,32 @@
 import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import "../styles/styles.css";
-import WedImage from "../styles/wed.jpg"; 
+import WedImage from "../styles/wed.jpg";
 import AvaImage from "../styles/ava.jpg";
 
-
 function Login() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+
+  const [form, setForm] = useState({
+    contact: "",
+    password: ""
+  });
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.id]: e.target.value });
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Login:", { username, password });
+
+    console.log("Login data:", form);
+
+    // тимчасово редірект на профіль
+    navigate("/profile");
   };
 
   return (
     <div className="container">
-      {}
       <img 
         src={WedImage} 
         alt="Wedding" 
@@ -23,17 +34,15 @@ function Login() {
       />
 
       <div className="form-wrapper">
-        {}
-        <h1 className="title gradient-text">LOGIN</h1>
+        <h1 className="title">LOGIN</h1>
         <form onSubmit={handleSubmit}>
           <div className="input-group">
-            <label htmlFor="username">USERNAME</label>
+            <label htmlFor="contact">EMAIL or PHONE NUMBER</label>
             <input
               type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
+              id="contact"
+              value={form.contact}
+              onChange={handleChange}
             />
           </div>
 
@@ -42,19 +51,19 @@ function Login() {
             <input
               type="password"
               id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              value={form.password}
+              onChange={handleChange}
             />
           </div>
 
-          <button type="submit" className="submit-btn">
-            LOGIN
-          </button>
+          <button type="submit" className="submit-btn">LOGIN</button>
         </form>
+
+        <p style={{ marginTop: "10px" }}>
+          Don’t have an account? <Link to="/register">Register</Link>
+        </p>
       </div>
 
-      {}
       <img 
         src={AvaImage} 
         alt="Avatar" 
