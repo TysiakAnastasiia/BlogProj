@@ -6,6 +6,7 @@ import { ProfilePage } from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit"; // default import
 import Dashboard from "./pages/Dashboard"; // default import
 import NotFound from "./pages/NotFound";
+import OtherProfilePage from "./pages/OtherProfile"; // додано
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit" element={<ProfileEdit />} />
+          <Route path="/profile/:userId" element={<OtherProfilePage />} /> {/* чужий профіль */}
           <Route path="/dashboard" element={<Dashboard />} />
           
           {/* Catch-all route for 404 */}
