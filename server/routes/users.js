@@ -1,9 +1,10 @@
 import express from "express";
+import { getAllUsers, getUserById, updateUser } from "../controllers/usersController.js";
+
 const router = express.Router();
 
-// приклад простого ендпоінта
-router.get("/", (req, res) => {
-  res.send("Users route works!");
-});
+router.get("/", getAllUsers);
+router.get("/:id", getUserById);
+router.put("/:id", updateUser);
 
 export default router;
