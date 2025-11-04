@@ -1,4 +1,4 @@
-import { db } from '../config.js';
+import pool from '../models/db.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -8,7 +8,7 @@ export const register = async (req, res) => {
 
   try {
     // Перевірка, чи існує користувач
-    const [existing] = await db.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email]);
+    const [existing] = await pool.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email]);
     if (existing.length > 0) {
       return res.status(400).json({ message: 'Username or email already exists' });
     }
@@ -17,15 +17,15 @@ export const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Додаємо користувача в БД
-    const [result] = await db.query(
+    const [result] = await pool.query(
       'INSERT INTO users (first_name, last_name, username, email, password, phone, birth_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [first_name, last_name, username, email, hashedPassword, phone, birth_date]
     );
 
     res.status(201).json({ message: 'User created', userId: result.insertId });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Registration error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -34,7 +34,7 @@ export const login = async (req, res) => {
   const { usernameOrEmail, password } = req.body;
 
   try {
-    const [users] = await db.query('SELECT * FROM users WHERE username = ? OR email = ?', [usernameOrEmail, usernameOrEmail]);
+    const [users] = await pool.query('SELECT * FROM users WHERE username = ? OR email = ?', [usernameOrEmail, usernameOrEmail]);
     if (users.length === 0) return res.status(400).json({ message: 'User not found' });
 
     const user = users[0];
@@ -45,7 +45,7 @@ export const login = async (req, res) => {
     const token = jwt.sign({ id: user.id, username: user.username }, 'your_secret_key', { expiresIn: '1d' });
     res.json({ token, user: { id: user.id, username: user.username, first_name: user.first_name, last_name: user.last_name } });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Login error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };

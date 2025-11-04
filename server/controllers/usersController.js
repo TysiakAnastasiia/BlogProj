@@ -1,4 +1,4 @@
-import { db } from "../config.js";
+import db from '../models/db.js';
 import bcrypt from "bcryptjs";
 
 // GET всі користувачі

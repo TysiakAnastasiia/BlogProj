@@ -1,4 +1,4 @@
-import { db } from "../config.js";
+import pool from '../models/db.js';
 
 // GET всі фільми
 export const getAllMovies = async (req, res) => {
