@@ -41,9 +41,22 @@ export const login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid password' });
 
-    // Генеруємо JWT
-    const token = jwt.sign({ id: user.id, username: user.username }, 'your_secret_key', { expiresIn: '1d' });
-    res.json({ token, user: { id: user.id, username: user.username, first_name: user.first_name, last_name: user.last_name } });
+    // Генеруємо JWT (краще винести секрет в .env)
+    const token = jwt.sign(
+      { id: user.id, username: user.username }, 
+      process.env.JWT_SECRET || 'your_secret_key_change_this_in_production', 
+      { expiresIn: '1d' }
+    );
+    
+    res.json({ 
+      token, 
+      user: { 
+        id: user.id, 
+        username: user.username, 
+        first_name: user.first_name, 
+        last_name: user.last_name 
+      } 
+    });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ message: 'Server error', error: err.message });

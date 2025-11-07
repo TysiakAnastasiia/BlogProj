@@ -1,128 +1,137 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/ProfileEdit.css";
-import defaultProfilePic from "../styles/ava.jpg";
+import { getProfile, updateProfile } from "../api/profileAPI";
 
 function ProfileEdit() {
   const navigate = useNavigate();
+  const [profileData, setProfileData] = useState(null);
+  const [profilePic, setProfilePic] = useState(null);
 
-  // Стейт для полів профілю
-  const [profileData, setProfileData] = useState({
-    firstName: "ANASTASIIA",
-    lastName: "TYSIAK",
-    birthday: "15.01.2006",
-    email: "tysiaknastia@gmail.com",
-    phone: "+380968219001",
-  });
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return navigate("/login");
 
-  // Стейт для аватару
-  const [profilePic, setProfilePic] = useState(defaultProfilePic);
+        const data = await getProfile(token);
+        console.log("PROFILE RESPONSE:", data); // 🟢 Подивись у консолі, що повертає бекенд
 
-  // Обробник зміни полів
+        const user = data.user || data; // 🟢 fallback, якщо бекенд не загортає в user
+
+        // Форматуємо дату
+        const formattedDate = user.birth_date
+          ? new Date(user.birth_date).toISOString().split("T")[0]
+          : "";
+
+        setProfileData({ ...user, birth_date: formattedDate });
+        setProfilePic(user.avatar || null);
+      } catch (err) {
+        console.error("Помилка завантаження профілю:", err);
+      }
+    };
+    fetchProfile();
+  }, [navigate]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProfileData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Обробник зміни фото
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setProfilePic(reader.result);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setProfilePic(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      await updateProfile(token, { ...profileData, avatar: profilePic });
+      navigate("/profile");
+    } catch (err) {
+      console.error("Помилка оновлення профілю:", err);
     }
   };
 
+  if (!profileData) return <p>Loading...</p>;
+
   return (
-    <div className="profile-container">
-      {/* Header */}
+    <div className="profile-page">
       <header className="profile-header">
-        <h1>
-          PROFILE SETTINGS <span className="header-subtitle">(only you see info)</span>
-        </h1>
+        <h1>EDIT PROFILE</h1>
         <button className="edit-button" onClick={() => navigate("/profile")}>
-          ← Back
+          BACK
         </button>
       </header>
 
-      {/* Main Content */}
-      <main className="profile-content">
-        {/* Left Column */}
-        <section className="profile-left-column">
-          <div className="profile-info-block">
-            <div className="profile-picture-wrapper">
-              <img src={profilePic} alt="Profile" className="profile-picture" />
-              <label className="edit-button">
-                CHANGE PHOTO
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoChange}
-                  style={{ display: "none" }}
-                />
-              </label>
-            </div>
-
-            <div className="profile-details">
+      <section className="profile-info">
+        <div className="info-left">
+          <div className="profile-avatar-placeholder">
+            <img
+              src={profilePic || "/default-avatar.png"}
+              alt="Avatar"
+              className="profile-picture"
+            />
+            <label className="edit-button">
+              CHANGE PHOTO
               <input
-                type="text"
-                name="firstName"
-                value={profileData.firstName}
-                onChange={handleChange}
-                className="detail-item"
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                style={{ display: "none" }}
               />
-              <input
-                type="text"
-                name="lastName"
-                value={profileData.lastName}
-                onChange={handleChange}
-                className="detail-item"
-              />
-              <input
-                type="text"
-                name="birthday"
-                value={profileData.birthday}
-                onChange={handleChange}
-                className="detail-item"
-              />
-              <input
-                type="email"
-                name="email"
-                value={profileData.email}
-                onChange={handleChange}
-                className="detail-item"
-              />
-              <input
-                type="tel"
-                name="phone"
-                value={profileData.phone}
-                onChange={handleChange}
-                className="detail-item"
-              />
-            </div>
+            </label>
           </div>
+        </div>
 
-          <div className="posts-section">
-            <h2 className="section-title">POSTS</h2>
-            <div className="content-box posts-box">
-              <span>SEE ALL</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Right Column */}
-        <section className="profile-right-column">
-          <div className="watched-section">
-            <h2 className="section-title">WATCHED</h2>
-            <div className="content-box watched-box">
-              <span>LIST</span>
-            </div>
-          </div>
-        </section>
-      </main>
+        <div className="info-right">
+          <input
+            type="text"
+            name="first_name"
+            value={profileData.first_name || ""}
+            onChange={handleChange}
+            className="detail-item"
+            placeholder="First Name"
+          />
+          <input
+            type="text"
+            name="last_name"
+            value={profileData.last_name || ""}
+            onChange={handleChange}
+            className="detail-item"
+            placeholder="Last Name"
+          />
+          <input
+            type="date"
+            name="birth_date"
+            value={profileData.birth_date || ""}
+            onChange={handleChange}
+            className="detail-item"
+          />
+          <input
+            type="email"
+            name="email"
+            value={profileData.email || ""}
+            onChange={handleChange}
+            className="detail-item"
+            placeholder="Email"
+          />
+          <input
+            type="text"
+            name="phone"
+            value={profileData.phone || ""}
+            onChange={handleChange}
+            className="detail-item"
+            placeholder="Phone"
+          />
+          <button className="add-post-button" onClick={handleSubmit}>
+            Save Changes
+          </button>
+        </div>
+      </section>
     </div>
   );
 }

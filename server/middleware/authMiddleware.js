@@ -5,8 +5,9 @@ export const verifyToken = (req, res, next) => {
   if (!token) return res.status(401).json({ message: "No token provided" });
 
   try {
-    const decoded = jwt.verify(token, "your_secret_key");
-    req.user = decoded; // id, username
+    // ⚠️ Використай свій ключ або змінну середовища
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your_secret_key");
+    req.user = decoded; // додає { id, username } до req
     next();
   } catch (err) {
     return res.status(403).json({ message: "Invalid token" });

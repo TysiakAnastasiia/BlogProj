@@ -1,51 +1,61 @@
-import db from '../models/db.js';
-import bcrypt from "bcryptjs";
+import pool from "../models/db.js";
 
-// GET всі користувачі
+// Отримати всіх користувачів
 export const getAllUsers = async (req, res) => {
   try {
-    const [users] = await db.query("SELECT id, first_name, last_name, username, email, phone, birth_date, created_at FROM users");
+    const [users] = await pool.query("SELECT * FROM users");
     res.json(users);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+  } catch (error) {
+    console.error("Помилка при отриманні користувачів:", error);
+    res.status(500).json({ message: "Помилка сервера" });
   }
 };
 
-// GET одного користувача
+// Отримати користувача за ID
 export const getUserById = async (req, res) => {
-  const { id } = req.params;
   try {
-    const [users] = await db.query("SELECT id, first_name, last_name, username, email, phone, birth_date, created_at FROM users WHERE id = ?", [id]);
-    if (users.length === 0) return res.status(404).json({ message: "User not found" });
-    res.json(users[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    const [rows] = await pool.query("SELECT * FROM users WHERE id = ?", [req.params.id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Користувача не знайдено" });
+    }
+    res.json(rows[0]);
+  } catch (error) {
+    console.error("Помилка при отриманні користувача:", error);
+    res.status(500).json({ message: "Помилка сервера" });
   }
 };
 
-// PUT редагувати користувача
-export const updateUser = async (req, res) => {
-  const { id } = req.params;
-  const { first_name, last_name, username, email, phone, birth_date, password } = req.body;
-
+// Отримати власний профіль (на основі токена)
+export const getMe = async (req, res) => {
   try {
-    let hashedPassword = undefined;
-    if (password) {
-      hashedPassword = await bcrypt.hash(password, 10);
+    const [rows] = await pool.query("SELECT * FROM users WHERE id = ?", [req.user.id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Користувача не знайдено" });
     }
+    res.json(rows[0]);
+  } catch (error) {
+    console.error("Помилка при отриманні профілю:", error);
+    res.status(500).json({ message: "Помилка сервера" });
+  }
+};
 
-    const [result] = await db.query(
-      `UPDATE users SET first_name=?, last_name=?, username=?, email=?, phone=?, birth_date=? ${hashedPassword ? ", password=?" : ""} WHERE id=?`,
-      hashedPassword
-        ? [first_name, last_name, username, email, phone, birth_date, hashedPassword, id]
-        : [first_name, last_name, username, email, phone, birth_date, id]
+// Оновити дані користувача (включно з /me)
+export const updateUser = async (req, res) => {
+  try {
+    // Якщо /me → замінюємо на ID користувача з токена
+    const id = req.params.id === "me" ? req.user.id : req.params.id;
+    const { first_name, last_name, username, email, phone, birth_date } = req.body;
+
+    await pool.query(
+      `UPDATE users
+       SET first_name=?, last_name=?, username=?, email=?, phone=?, birth_date=?
+       WHERE id=?`,
+      [first_name, last_name, username, email, phone, birth_date, id]
     );
 
-    res.json({ message: "User updated", affectedRows: result.affectedRows });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    res.json({ message: "Профіль оновлено успішно" });
+  } catch (error) {
+    console.error("Помилка оновлення профілю:", error);
+    res.status(500).json({ message: "Помилка оновлення профілю" });
   }
 };

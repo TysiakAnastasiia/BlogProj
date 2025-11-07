@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import { ProfilePage } from "./pages/Profile";
+import ProfilePage from './pages/Profile'; // ✅ default import
 import ProfileEdit from "./pages/ProfileEdit"; // default import
 import Dashboard from "./pages/Dashboard"; // default import
 import NotFound from "./pages/NotFound";
