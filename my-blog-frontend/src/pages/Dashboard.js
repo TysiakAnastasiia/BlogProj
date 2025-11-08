@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "../styles/Dashboard.css";
-import defaultImage from "../styles/wed.jpg";
 import api from "../api"; 
-
+import defaultImage from "../styles/def.png"; 
 import Header from "./Header";
 import "../styles/Header.css";
 
