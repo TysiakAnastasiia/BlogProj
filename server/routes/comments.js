@@ -5,23 +5,23 @@ import { verifyToken } from '../middleware/authMiddleware.js';
 const router = express.Router();
 
 // @route   POST api/comments
-// @desc    Додати новий коментар
+// @desc    Додати новий коментар (для post або movie)
 // @access  Private
 router.post('/', verifyToken, async (req, res) => {
   try {
-    const { post_id, content } = req.body;
+    const { post_id, content, item_type } = req.body;
     const author_id = req.user.id; 
 
     const [insertResult] = await pool.query(
-      'INSERT INTO comments (post_id, author_id, content) VALUES (?, ?, ?)',
-      [post_id, author_id, content]
+      'INSERT INTO comments (post_id, author_id, content, item_type) VALUES (?, ?, ?, ?)',
+      [post_id, author_id, content, item_type]
     );
 
     const newCommentId = insertResult.insertId;
 
     const [commentRows] = await pool.query(
       `SELECT 
-        c.id, c.post_id, c.author_id, c.content, c.created_at, 
+        c.id, c.post_id, c.author_id, c.content, c.created_at, c.item_type,
         u.username AS author_nickname 
        FROM comments c
        JOIN users u ON c.author_id = u.id

@@ -1,19 +1,21 @@
 import pool from '../models/db.js';
 
 export const getAllMovies = async (req, res) => {
-  const userId = req.query.userId;
+  const { userId, search } = req.query; 
 
   if (!userId) {
     return res.status(400).json({ message: 'User ID is required' });
   }
 
   try {
-    const query = `
+    const params = [userId]; 
+    
+    let query = `
       SELECT 
         m.*, 
-        u.username AS author_nickname, -- <--- НОВИЙ РЯДОК
-        (SELECT COUNT(*) > 0 FROM likes l WHERE l.post_id = m.id AND l.user_id = ?) AS likedByMe,
-        (SELECT COUNT(*) FROM likes l WHERE l.post_id = m.id) AS likes, 
+        u.username AS author_nickname, 
+        (SELECT COUNT(*) > 0 FROM likes l WHERE l.post_id = m.id AND l.user_id = ? AND l.item_type = 'movie') AS likedByMe,
+        (SELECT COUNT(*) FROM likes l WHERE l.post_id = m.id AND l.item_type = 'movie') AS likes, 
         (
           SELECT IFNULL(JSON_ARRAYAGG(
             JSON_OBJECT(
@@ -26,14 +28,23 @@ export const getAllMovies = async (req, res) => {
           ), '[]')
           FROM comments c
           JOIN users u_comment ON c.author_id = u_comment.id
-          WHERE c.post_id = m.id 
+          WHERE c.post_id = m.id AND c.item_type = 'movie'
         ) AS comments
       FROM movies m
-      JOIN users u ON m.created_by = u.id -- <--- НОВИЙ JOIN
-      ORDER BY m.created_at DESC;
+      JOIN users u ON m.user_id = u.id
     `;
+
+    if (search) {
+      query += `
+        WHERE (m.title LIKE ? OR m.genre LIKE ?)
+      `;
+      params.push(`%${search}%`);
+      params.push(`%${search}%`);
+    }
     
-    const [movies] = await pool.query(query, [userId]);
+    query += ` ORDER BY m.created_at DESC;`;
+
+    const [movies] = await pool.query(query, params);
     
     const formattedMovies = movies.map(movie => ({
       ...movie,
@@ -45,7 +56,7 @@ export const getAllMovies = async (req, res) => {
 
   } catch (err) {
     console.error('Error fetching movies:', err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
@@ -62,21 +73,18 @@ export const getMovieById = async (req, res) => {
 };
 
 export const createMovie = async (req, res) => {
-  console.log('🎬 Creating movie - received data:', req.body);
-  
-  const { title, genre, year, image_url, created_by } = req.body;
-  
+  const { title, genre, year, image, user_id } = req.body; 
   if (!title) {
     return res.status(400).json({ message: "Title is required" });
   }
-  if (!created_by) {
-    return res.status(400).json({ message: "Created by (user ID) is required" });
+  if (!user_id) {
+    return res.status(400).json({ message: "User ID is required" });
   }
   
   try {
     const [result] = await pool.query(
-      "INSERT INTO movies (title, genre, year, image_url, created_by) VALUES (?, ?, ?, ?, ?)", 
-      [title, genre || null, year || null, image_url || null, created_by]
+      "INSERT INTO movies (title, genre, year, image, user_id) VALUES (?, ?, ?, ?, ?)", 
+      [title, genre || null, year || null, image || null, user_id]
     );
     
     res.status(201).json({ 
@@ -91,12 +99,12 @@ export const createMovie = async (req, res) => {
 
 export const updateMovie = async (req, res) => {
   const { id } = req.params;
-  const { title, genre, year, image_url } = req.body;
+  const { title, genre, year, image } = req.body;
   
   try {
     const [result] = await pool.query(
-      "UPDATE movies SET title=?, genre=?, year=?, image_url=? WHERE id=?", 
-      [title, genre, year, image_url, id]
+      "UPDATE movies SET title=?, genre=?, year=?, image=? WHERE id=?", 
+      [title, genre, year, image, id]
     );
     
     res.json({ message: "Movie updated", affectedRows: result.affectedRows });
@@ -110,9 +118,8 @@ export const deleteMovie = async (req, res) => {
   const { id } = req.params;
   
   try {
-    await pool.query("DELETE FROM likes WHERE post_id = ?", [id]);
-    await pool.query("DELETE FROM comments WHERE post_id = ?", [id]);
-    
+    await pool.query("DELETE FROM likes WHERE post_id = ? AND item_type = 'movie'", [id]);
+    await pool.query("DELETE FROM comments WHERE post_id = ? AND item_type = 'movie'", [id]);
     const [result] = await pool.query("DELETE FROM movies WHERE id=?", [id]);
     
     if (result.affectedRows === 0) {

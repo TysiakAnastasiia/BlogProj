@@ -13,11 +13,13 @@ function Dashboard() {
   const [selectedPost, setSelectedPost] = useState(null);
   const [editModal, setEditModal] = useState(false);
   const [itemInEditor, setItemInEditor] = useState({ type: "post", title: "", content: "", genre: "", year: "", image: null });
-  const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState(null);
   const [openOptionsPostId, setOpenOptionsPostId] = useState(null);
   const [isModalOptionsOpen, setIsModalOptionsOpen] = useState(false);
   const [likedByMe, setLikedByMe] = useState(new Set());
+
+  const [searchQuery, setSearchQuery] = useState(""); 
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(""); 
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -29,12 +31,23 @@ function Dashboard() {
   }, []);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500); 
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [searchQuery]); 
+
+  useEffect(() => {
     const fetchData = async () => {
       if (!user) return; 
       
       try {
         const apiFunction = contentType === "posts" ? api.getPosts : api.getMovies;
-        const res = await apiFunction(user.id); 
+        
+        const res = await apiFunction(user.id, debouncedSearchQuery); 
 
         setPosts(res);
         
@@ -51,7 +64,7 @@ function Dashboard() {
     };
     
     fetchData();
-  }, [contentType, user]); 
+  }, [contentType, user, debouncedSearchQuery]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -66,11 +79,6 @@ function Dashboard() {
     };
   }, []);
 
-  const filteredPosts = posts.filter(post =>
-    Object.values(post).some(value =>
-      value && value.toString().toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
 
   const resetEditor = () => {
     setItemInEditor({ type: contentType === "posts" ? "post" : "movie", title: "", content: "", genre: "", year: "", image: null });
@@ -104,8 +112,8 @@ function Dashboard() {
         title: itemInEditor.title,
         genre: itemInEditor.genre || "",
         year: itemInEditor.year || null,
-        image_url: itemInEditor.image || itemInEditor.image_url || "",
-        created_by: user.id 
+        image: itemInEditor.image || "", 
+        user_id: user.id 
       };
       apiFunction = isEditing ? api.updateMovie : api.createMovie; 
     }
@@ -115,7 +123,7 @@ function Dashboard() {
         await apiFunction(updateId, itemData, user.token);
         
         setPosts(posts.map(p => 
-          p.id === updateId ? { ...p, ...itemData, image_url: itemData.image_url, image: itemData.image } : p
+          p.id === updateId ? { ...p, ...itemData, image: itemData.image } : p
         ));
         
         alert("Item updated successfully!");
@@ -208,9 +216,9 @@ function Dashboard() {
 
     try {
       if (hasLiked) {
-        await api.removeLike(id, user.token);
+        await api.removeLike(id, contentType, user.token);
       } else {
-        await api.addLike({ post_id: id }, user.token); 
+        await api.addLike({ post_id: id, item_type: contentType }, user.token); 
       }
     } catch (err) {
       alert("Failed to update like. Please try again.");
@@ -232,7 +240,8 @@ function Dashboard() {
     try {
       const commentData = {
         post_id: id,
-        content: commentText
+        content: commentText,
+        item_type: contentType 
       };
 
       const newComment = await api.addComment(commentData, user.token); 
@@ -296,7 +305,6 @@ function Dashboard() {
       <Header />
 
       <div className="dashboard-container">
-        {/* ... (код кнопок, пошуку, тощо - без змін) ... */}
         <div className="dashboard-header">
           <h1>{contentType === "posts" ? "Posts" : "Movies"}</h1>
           <button className="add-post-button" onClick={() => {
@@ -329,7 +337,7 @@ function Dashboard() {
         </div>
 
         <div className={`posts-container ${viewMode}`}>
-          {filteredPosts.map(post => (
+          {posts.map(post => (
             <div key={post.id} className="post-card" onClick={() => setSelectedPost(post)}>
               
               <button className="options-button" onClick={(e) => {
@@ -388,7 +396,6 @@ function Dashboard() {
 
                 <h3>{selectedPost.title}</h3>
                 
-                {/* --- НОВИЙ РЯДОК ТУТ --- */}
                 <h4 className="post-author-nickname">By: {selectedPost.author_nickname || 'Unknown'}</h4>
 
                 {selectedPost.genre && <p>Genre: {selectedPost.genre} | Year: {selectedPost.year}</p>}
@@ -487,12 +494,12 @@ function Dashboard() {
                   </>
                 )}
 
-                {itemInEditor.id && (typeof itemInEditor.image === 'string' || typeof itemInEditor.image_url === 'string') && (
+                {itemInEditor.id && (typeof (itemInEditor.image) === 'string' && (itemInEditor.image).startsWith('http')) && (
                      <input
                         type="text"
                         placeholder="Image URL"
-                        value={itemInEditor.image || itemInEditor.image_url}
-                        onChange={(e) => setItemInEditor(prev => ({ ...prev, image: e.target.value, image_url: e.target.value }))}
+                        value={itemInEditor.image}
+                        onChange={(e) => setItemInEditor(prev => ({ ...prev, image: e.target.value }))}
                     />
                 )}
 

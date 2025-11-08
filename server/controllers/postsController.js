@@ -1,19 +1,21 @@
 import pool from '../models/db.js';
 
 export const getAllPosts = async (req, res) => {
-  const userId = req.query.userId; 
+  const { userId, search } = req.query; 
 
   if (!userId) {
     return res.status(400).json({ message: 'User ID is required to fetch posts' });
   }
 
   try {
-    const query = `
+    const params = [userId];
+    
+    let query = `
       SELECT 
         p.*, 
-        u.username AS author_nickname, -- <--- НОВИЙ РЯДОК
-        (SELECT COUNT(*) > 0 FROM likes l WHERE l.post_id = p.id AND l.user_id = ?) AS likedByMe,
-        (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) AS likes, 
+        u.username AS author_nickname,
+        (SELECT COUNT(*) > 0 FROM likes l WHERE l.post_id = p.id AND l.user_id = ? AND l.item_type = 'post') AS likedByMe,
+        (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id AND l.item_type = 'post') AS likes, 
         (
           SELECT IFNULL(JSON_ARRAYAGG(
             JSON_OBJECT(
@@ -26,14 +28,23 @@ export const getAllPosts = async (req, res) => {
           ), '[]')
           FROM comments c
           JOIN users u_comment ON c.author_id = u_comment.id
-          WHERE c.post_id = p.id
+          WHERE c.post_id = p.id AND c.item_type = 'post'
         ) AS comments
       FROM posts p
-      JOIN users u ON p.user_id = u.id -- <--- НОВИЙ JOIN
-      ORDER BY p.created_at DESC;
+      JOIN users u ON p.user_id = u.id
     `;
 
-    const [posts] = await pool.query(query, [userId]);
+    if (search) {
+      query += `
+        WHERE (p.title LIKE ? OR p.content LIKE ?)
+      `;
+      params.push(`%${search}%`);
+      params.push(`%${search}%`);
+    }
+
+    query += ` ORDER BY p.created_at DESC;`;
+
+    const [posts] = await pool.query(query, params);
     
     const formattedPosts = posts.map(post => ({
       ...post,
@@ -62,10 +73,7 @@ export const getPostById = async (req, res) => {
 };
 
 export const createPost = async (req, res) => {
-  console.log('📝 Creating post - received data:', req.body);
-  
   const { title, content, image, user_id } = req.body;
-  
   if (!title) {
     return res.status(400).json({ message: "Title is required" });
   }
@@ -78,7 +86,6 @@ export const createPost = async (req, res) => {
       "INSERT INTO posts (title, content, image, user_id) VALUES (?, ?, ?, ?)", 
       [title, content || null, image || null, user_id]
     );
-    
     res.status(201).json({ 
       message: "Post created", 
       postId: result.insertId,
@@ -92,7 +99,6 @@ export const createPost = async (req, res) => {
 export const updatePost = async (req, res) => {
   const { id } = req.params;
   const { title, content, image } = req.body;
-  
   try {
     const [result] = await pool.query(
       "UPDATE posts SET title=?, content=?, image=? WHERE id=?", 
@@ -107,16 +113,14 @@ export const updatePost = async (req, res) => {
 
 export const deletePost = async (req, res) => {
   const { id } = req.params;
-  
   try {
-    await pool.query("DELETE FROM likes WHERE post_id = ?", [id]);
-    await pool.query("DELETE FROM comments WHERE post_id = ?", [id]);
+    await pool.query("DELETE FROM likes WHERE post_id = ? AND item_type = 'post'", [id]);
+    await pool.query("DELETE FROM comments WHERE post_id = ? AND item_type = 'post'", [id]);
     const [result] = await pool.query("DELETE FROM posts WHERE id=?", [id]);
     
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Post not found" });
     }
-    
     res.json({ message: "Post deleted", affectedRows: result.affectedRows });
   } catch (err) {
     console.error('❌ Delete post error:', err);

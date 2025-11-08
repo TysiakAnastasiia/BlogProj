@@ -5,25 +5,25 @@ import { verifyToken } from '../middleware/authMiddleware.js';
 const router = express.Router();
 
 // @route   POST api/likes
-// @desc    Додати лайк
+// @desc    Додати лайк (для post або movie)
 // @access  Private
 router.post('/', verifyToken, async (req, res) => {
   try {
-    const { post_id } = req.body;
+    const { post_id, item_type } = req.body;
     const user_id = req.user.id;
 
     const [existingLikes] = await pool.query(
-      'SELECT * FROM likes WHERE post_id = ? AND user_id = ?',
-      [post_id, user_id]
+      'SELECT * FROM likes WHERE post_id = ? AND user_id = ? AND item_type = ?',
+      [post_id, user_id, item_type]
     );
 
     if (existingLikes.length > 0) {
-      return res.status(400).json({ message: 'Post already liked' });
+      return res.status(400).json({ message: 'Item already liked' });
     }
 
     await pool.query(
-      'INSERT INTO likes (post_id, user_id) VALUES (?, ?)',
-      [post_id, user_id]
+      'INSERT INTO likes (post_id, user_id, item_type) VALUES (?, ?, ?)',
+      [post_id, user_id, item_type]
     );
     
     res.status(201).json({ message: 'Like added' });
@@ -34,19 +34,18 @@ router.post('/', verifyToken, async (req, res) => {
   }
 });
 
-// @route   DELETE api/likes/:postId
-// @desc    Видалити лайк
+// @route   DELETE api/likes/:itemType/:postId
+// @desc    Видалити лайк (для post або movie)
 // @access  Private
-router.delete('/:postId', verifyToken, async (req, res) => {
+router.delete('/:itemType/:postId', verifyToken, async (req, res) => {
   try {
-    const { postId } = req.params; 
+    const { postId, itemType } = req.params; 
     const user_id = req.user.id; 
 
-    const [result] = await pool.query(
-      'DELETE FROM likes WHERE post_id = ? AND user_id = ?',
-      [postId, user_id]
+    await pool.query(
+      'DELETE FROM likes WHERE post_id = ? AND user_id = ? AND item_type = ?',
+      [postId, user_id, itemType]
     );
-
 
     res.json({ message: 'Like removed' });
 

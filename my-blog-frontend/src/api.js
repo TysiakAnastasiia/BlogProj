@@ -47,9 +47,9 @@ export const unfollowUser = async (userId, token) => {
   return res.data;
 };
 
-export const getPosts = async (userId) => {
+export const getPosts = async (userId, search) => {
   const res = await axios.get(`${API_URL}/posts`, {
-    params: { userId: userId }
+    params: { userId: userId, search: search } 
   });
   return res.data;
 };
@@ -76,9 +76,9 @@ export const deletePost = async (id, token) => {
 };
 
 
-export const getMovies = async (userId) => {
+export const getMovies = async (userId, search) => {
   const res = await axios.get(`${API_URL}/movies`, {
-    params: { userId: userId }
+    params: { userId: userId, search: search } 
   });
   return res.data;
 };
@@ -112,14 +112,13 @@ export const addLike = async (likeData, token) => {
   return res.data;
 };
 
-export const removeLike = async (postId, token) => {
-  const res = await axios.delete(`${API_URL}/likes/${postId}`, {
+export const removeLike = async (postId, itemType, token) => {
+  const res = await axios.delete(`${API_URL}/likes/${itemType}/${postId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
 };
 
-// --- COMMENTS ---
 export const addComment = async (commentData, token) => {
   const res = await axios.post(`${API_URL}/comments`, commentData, {
     headers: { Authorization: `Bearer ${token}` },
@@ -145,12 +144,12 @@ export default {
   unfollowUser,
   getPosts,
   createPost,
-  updatePost, 
-  deletePost, 
+  updatePost,
+  deletePost,
   getMovies,
   createMovie,
-  updateMovie, 
-  deleteMovie, 
+  updateMovie,
+  deleteMovie,
   addLike,
   removeLike,
   addComment,
