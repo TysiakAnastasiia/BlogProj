@@ -1,18 +1,14 @@
 :root {
-  --bg-color: #0A192F;        
-  --box-bg: #112240;          
-  --surface-hover: #173155;   
-  
-  --text-color: #E2E8F0;      
-  --text-light: #A0AEC0;      
-  
+  --bg-color: #0A192F;
+  --box-bg: #112240;
+  --surface-hover: #173155;
+  --text-color: #E2E8F0;
+  --text-light: #A0AEC0;
   --accent-gradient: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
   --accent-hover-gradient: linear-gradient(135deg, #5A6EE4 0%, #6A4194 100%);
-  
-  --accent-text: #FFFFFF;     
-
-  --border-color: #2D3748;    
-  --shadow-color: rgba(0, 0, 0, 0.4); 
+  --accent-text: #FFFFFF;
+  --border-color: #2D3748;
+  --shadow-color: rgba(0, 0, 0, 0.4);
 }
 
 body {
@@ -30,13 +26,13 @@ body {
 button {
   font-family: inherit;
   cursor: pointer;
-  border-radius: 8px; 
+  border-radius: 8px;
   transition: all 0.3s ease;
-  border: none; 
+  border: none;
 }
 
 h1, h2, h3 {
-  color: var(--text-color); 
+  color: var(--text-color);
 }
 
 .profile-page {
@@ -51,10 +47,10 @@ h1, h2, h3 {
   justify-content: space-between;
   align-items: center;
   padding: 10px 20px;
-  background-color: var(--box-bg); 
-  border-bottom: 2px solid var(--border-color); 
-  box-shadow: 0 4px 12px var(--shadow-color); 
-  position: sticky; 
+  background-color: var(--box-bg);
+  border-bottom: 2px solid var(--border-color);
+  box-shadow: 0 4px 12px var(--shadow-color);
+  position: sticky;
   top: 0;
   z-index: 100;
 }
@@ -69,7 +65,7 @@ h1, h2, h3 {
   font-size: 0.8rem;
   background: none;
   border: none;
-  color: #667EEA; 
+  color: #667EEA;
   text-transform: uppercase;
   font-weight: bold;
 }
@@ -82,7 +78,7 @@ h1, h2, h3 {
   display: flex;
   padding: 20px;
   gap: 20px;
-  border-bottom: 2px solid var(--border-color); 
+  border-bottom: 2px solid var(--border-color);
 }
 
 .info-left {
@@ -96,8 +92,11 @@ h1, h2, h3 {
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  border: 3px solid var(--accent-text); 
-  box-shadow: 0 4px 15px var(--shadow-color); 
+  border: 3px solid var(--border-color);
+  box-shadow: 
+    0 0 15px rgba(102, 126, 234, 0.6),
+    0 0 30px rgba(118, 75, 162, 0.4),
+    0 4px 15px var(--shadow-color);
   background-size: cover;
   background-position: center;
   margin-bottom: 30px;
@@ -107,17 +106,17 @@ h1, h2, h3 {
 .profile-name,
 .profile-nickname {
   font-size: 1.2rem;
-  background-color: var(--box-bg); 
-  border: 1px solid var(--border-color); 
+  background-color: var(--box-bg);
+  border: 1px solid var(--border-color);
   padding: 5px 10px;
   border-radius: 5px;
   margin: 0;
-  color: var(--text-color); 
+  color: var(--text-color);
 }
 
 .profile-nickname {
   font-style: italic;
-  color: var(--text-light); 
+  color: var(--text-light);
   font-size: 1rem;
 }
 
@@ -133,8 +132,8 @@ h1, h2, h3 {
 }
 
 .profile-stats div {
-  background-color: var(--box-bg); 
-  border: 1px solid var(--border-color); 
+  background-color: var(--box-bg);
+  border: 1px solid var(--border-color);
   padding: 5px 10px;
   border-radius: 5px;
   font-size: 0.9rem;
@@ -153,7 +152,7 @@ h1, h2, h3 {
   border-radius: 20px;
   font-weight: bold;
   border: none;
-  box-shadow: 0 4px 12px var(--shadow-color); 
+  box-shadow: 0 4px 12px var(--shadow-color);
   transition: all 0.3s ease;
 }
 
@@ -182,8 +181,8 @@ h1, h2, h3 {
 
 .posts-section {
   padding: 20px;
-  border-top: 2px solid var(--border-color); 
-  background-color: var(--bg-color); 
+  border-top: 2px solid var(--border-color);
+  background-color: var(--bg-color);
 }
 
 .posts-title {
@@ -217,7 +216,7 @@ h1, h2, h3 {
   background: var(--accent-gradient);
   color: var(--accent-text);
   border-color: transparent;
-  box-shadow: 0 4px 10px rgba(102,126,234,0.4); 
+  box-shadow: 0 4px 10px rgba(102,126,234,0.4);
 }
 
 .posts-container {
@@ -233,8 +232,8 @@ h1, h2, h3 {
 .posts-container.grid .post-card {
   width: 30%;
   min-width: 200px;
-  background: var(--box-bg); 
-  border: 1px solid var(--border-color); 
+  background: var(--box-bg);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 8px 20px var(--shadow-color);
@@ -250,7 +249,7 @@ h1, h2, h3 {
   width: 100%;
   height: 150px;
   object-fit: cover;
-  border-bottom: 1px solid var(--border-color); 
+  border-bottom: 1px solid var(--border-color);
 }
 
 .posts-container.list {
@@ -264,8 +263,8 @@ h1, h2, h3 {
   display: flex;
   align-items: center;
   gap: 15px;
-  background: var(--box-bg); 
-  border: 1px solid var(--border-color); 
+  background: var(--box-bg);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 10px;
   box-shadow: 0 8px 20px var(--shadow-color);
@@ -283,7 +282,7 @@ h1, h2, h3 {
   object-fit: cover;
   border-radius: 5px;
   flex-shrink: 0;
-  border: 1px solid var(--border-color); 
+  border: 1px solid var(--border-color);
 }
 
 .post-card-title {
@@ -291,7 +290,7 @@ h1, h2, h3 {
   font-size: 1rem;
   padding: 10px;
   margin: 0;
-  color: var(--text-color); 
+  color: var(--text-color);
 }
 
 .posts-container.list .post-card-title {
