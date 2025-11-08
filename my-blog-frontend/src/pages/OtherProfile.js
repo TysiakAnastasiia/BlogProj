@@ -24,7 +24,6 @@ function OtherProfilePage() {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // Якщо шуканий userId — це твій власний, редірект на /profile
         if (meRes.data.id.toString() === userId) {
           return navigate("/profile");
         }
@@ -81,9 +80,6 @@ function OtherProfilePage() {
     }
   };
 
-  const handleSendMessage = () => {
-    navigate(`/messages/${userId}`);
-  };
 
   if (!user) return <p>Loading...</p>;
 
@@ -117,9 +113,6 @@ function OtherProfilePage() {
           <div className="profile-actions">
             <button className="small-button" onClick={handleFollowToggle}>
               {following ? "Unfollow" : "Follow"}
-            </button>
-            <button className="small-button" onClick={handleSendMessage}>
-              Send Message
             </button>
           </div>
         </div>

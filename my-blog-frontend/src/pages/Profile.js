@@ -1,14 +1,14 @@
-// src/pages/Profile.js
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Profile.css";
-import Header from "./Header";         
-import { getProfile } from "../api";
+import Header from "./Header";
+// 'getProfile' - це, мабуть, ваш API-запит до '/api/users/me'
+import { getProfile } from "../api"; 
 
 function ProfilePage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [posts, setPosts] = useState([]); 
+  const [posts, setPosts] = useState([]); // Пости будуть тут
   const [viewMode, setViewMode] = useState("grid");
 
   useEffect(() => {
@@ -17,12 +17,18 @@ function ProfilePage() {
         const token = localStorage.getItem("token");
         if (!token) return navigate("/login");
 
-        const userData = await getProfile(token);
+        const userData = await getProfile(token); // Отримуємо дані з /me
 
         setUser({
           ...userData,
           avatar: userData.avatar_url || "https://i.imgur.com/gBqR1gq.jpeg",
         });
+
+        // --- ДОДАЙТЕ ЦЕЙ РЯДОК ---
+        // Тепер наш бекенд повертає пости в об'єкті 'user'
+        setPosts(userData.posts || []); 
+        // -------------------------
+
       } catch (err) {
         console.error("Помилка при отриманні профілю:", err);
       }
@@ -34,7 +40,6 @@ function ProfilePage() {
 
   return (
     <div className="profile-page">
-      {/* --- Додаємо хедер --- */}
       <Header />
 
       <header className="profile-header">
@@ -65,15 +70,18 @@ function ProfilePage() {
         <div className="info-right">
           <div className="profile-stats">
             <div>
+              {/* Тепер 'posts.length' буде правильним */}
               <strong>{posts.length}</strong> posts
             </div>
             <div>
               <strong>{user.watched || 0}</strong> watched
             </div>
             <div>
+              {/* Тепер 'user.followers' прийде з бекенду */}
               <strong>{user.followers || 0}</strong> followers
             </div>
             <div>
+              {/* Тепер 'user.following' прийде з бекенду */}
               <strong>{user.following || 0}</strong> follow
             </div>
           </div>
@@ -97,10 +105,12 @@ function ProfilePage() {
           </button>
         </div>
         <div className={`posts-container ${viewMode}`}>
+          {/* Мапимо 'posts' зі стану, а не 'user.posts' */}
           {posts.map((post) => (
             <div key={post.id} className="post-card">
               <img
-                src={post.image}
+                // Використовуємо 'post.image_url' або 'post.image' (залежно від вашої БД)
+                src={post.image || post.image_url || "https://i.imgur.com/3GvwNBf.png"} 
                 alt={post.title}
                 className="post-image"
               />

@@ -1,30 +1,106 @@
 import pool from "../models/db.js";
 import bcrypt from "bcryptjs";
 
-// Отримати всіх користувачів
-export const getAllUsers = async (req, res) => {
+// --- НОВІ ФУНКЦІЇ ДЛЯ ПІДПИСКИ ---
+
+export const followUser = async (req, res) => {
+  const followerId = req.user.id; // ID того, хто підписується (з токена)
+  const followingId = req.params.id; // ID того, на кого підписуються (з URL)
+
+  // Перевірка на само-підписку
+  if (followerId == followingId) {
+    return res.status(400).json({ message: "Ви не можете підписатися самі на себе" });
+  }
+
   try {
-    const [users] = await pool.query(
-      "SELECT id, first_name, last_name, username, email, phone, birth_date, avatar_url, created_at FROM users"
+    // Перевірка, чи підписка вже існує
+    const [existing] = await pool.query(
+      "SELECT * FROM follows WHERE follower_id = ? AND following_id = ?",
+      [followerId, followingId]
     );
-    res.json(users);
+
+    if (existing.length > 0) {
+      return res.status(400).json({ message: "Ви вже підписані на цього користувача" });
+    }
+
+    // Створення підписки
+    await pool.query(
+      "INSERT INTO follows (follower_id, following_id) VALUES (?, ?)",
+      [followerId, followingId]
+    );
+
+    res.status(201).json({ message: "Підписка успішно створена" });
   } catch (error) {
-    console.error("Помилка при отриманні користувачів:", error);
+    console.error("Помилка при підписці:", error);
     res.status(500).json({ message: "Помилка сервера" });
   }
 };
 
-// Отримати користувача за ID
-export const getUserById = async (req, res) => {
+export const unfollowUser = async (req, res) => {
+  const followerId = req.user.id; // ID того, хто відписується
+  const followingId = req.params.id; // ID того, від кого відписуються
+
   try {
-    const [rows] = await pool.query(
-      "SELECT id, first_name, last_name, username, email, phone, birth_date, avatar_url, created_at FROM users WHERE id = ?",
-      [req.params.id]
+    const [result] = await pool.query(
+      "DELETE FROM follows WHERE follower_id = ? AND following_id = ?",
+      [followerId, followingId]
     );
+
+    if (result.affectedRows === 0) {
+      // Це не критична помилка, але корисно знати
+      return res.status(400).json({ message: "Ви не були підписані на цього користувача" });
+    }
+
+    res.status(200).json({ message: "Підписка успішно скасована" });
+  } catch (error) {
+    console.error("Помилка при відписці:", error);
+    res.status(500).json({ message: "Помилка сервера" });
+  }
+};
+
+
+// --- ОНОВЛЕНІ ФУНКЦІЇ ОТРИМАННЯ ДАНИХ ---
+
+// Отримати користувача за ID (для сторінки іншого користувача)
+export const getUserById = async (req, res) => {
+  const profileId = req.params.id; // ID профілю, який ми дивимось
+  const viewerId = req.user.id;   // ID того, хто дивиться (з токена)
+
+  try {
+    // Великий запит, який робить все:
+    // 1. Бере дані користувача
+    // 2. Рахує його підписників (followers)
+    // 3. Рахує його підписки (following)
+    // 4. Перевіряє, чи ви (viewer) підписані на нього (isFollowing)
+    const [rows] = await pool.query(
+      `SELECT 
+        u.id, u.first_name, u.last_name, u.username, u.email, u.phone, u.birth_date, u.avatar_url, u.created_at,
+        (SELECT COUNT(*) FROM follows WHERE following_id = u.id) AS followers,
+        (SELECT COUNT(*) FROM follows WHERE follower_id = u.id) AS following,
+        (SELECT COUNT(*) FROM follows WHERE follower_id = ? AND following_id = u.id) > 0 AS isFollowing
+      FROM users u
+      WHERE u.id = ?`,
+      [viewerId, profileId] // [viewerId] -> ?, [profileId] -> u.id
+    );
+
     if (rows.length === 0) {
       return res.status(404).json({ message: "Користувача не знайдено" });
     }
-    res.json(rows[0]);
+
+    // Отримуємо пости користувача (як очікує фронтенд)
+    // Я припускаю, що ваша таблиця постів називається 'posts', а колонка 'user_id'
+    const [posts] = await pool.query(
+      "SELECT * FROM posts WHERE user_id = ? ORDER BY created_at DESC", 
+      [profileId]
+    );
+
+    const user = rows[0];
+    // 'isFollowing' - це 1 (true) або 0 (false), конвертуємо в boolean
+    user.isFollowing = !!user.isFollowing; 
+    user.posts = posts; // Додаємо пости до відповіді
+
+    res.json(user);
+
   } catch (error) {
     console.error("Помилка при отриманні користувача:", error);
     res.status(500).json({ message: "Помилка сервера" });
@@ -33,70 +109,67 @@ export const getUserById = async (req, res) => {
 
 // Отримати власний профіль (на основі токена)
 export const getMe = async (req, res) => {
+  const userId = req.user.id;
   try {
-    console.log("🔍 Getting profile for user ID:", req.user.id);
-    
+    console.log("🔍 Getting profile for user ID:", userId);
+
+    // Схожий запит, але без 'isFollowing' (ви не можете бути підписані самі на себе)
     const [rows] = await pool.query(
-      "SELECT id, first_name, last_name, username, email, phone, birth_date, avatar_url, created_at FROM users WHERE id = ?",
-      [req.user.id]
+      `SELECT 
+        u.id, u.first_name, u.last_name, u.username, u.email, u.phone, u.birth_date, u.avatar_url, u.created_at,
+        (SELECT COUNT(*) FROM follows WHERE following_id = u.id) AS followers,
+        (SELECT COUNT(*) FROM follows WHERE follower_id = u.id) AS following
+      FROM users u
+      WHERE u.id = ?`,
+      [userId]
     );
-    
+
     if (rows.length === 0) {
       return res.status(404).json({ message: "Користувача не знайдено" });
     }
-    
-    console.log("✅ Profile found:", rows[0]);
-    res.json(rows[0]);
+
+    // Також отримуємо пости
+    const [posts] = await pool.query(
+      "SELECT * FROM posts WHERE user_id = ? ORDER BY created_at DESC", 
+      [userId]
+    );
+
+    const user = rows[0];
+    user.posts = posts; // Додаємо пости до об'єкта користувача
+
+    console.log("✅ Profile found:", user);
+    res.json(user);
   } catch (error) {
     console.error("❌ Помилка при отриманні профілю:", error);
     res.status(500).json({ message: "Помилка сервера" });
   }
 };
 
-// Оновити дані користувача
+// --- Існуюча функція updateUser (без змін) ---
 export const updateUser = async (req, res) => {
   try {
-    console.log("📍 req.path:", req.path);
-    console.log("📍 req.route.path:", req.route.path);
-    console.log("📍 req.params:", req.params);
-    
-    // ✅ ВИПРАВЛЕНО: Перевіряємо req.path або req.route.path
     let userId;
     if (req.path === "/me" || req.route.path === "/me") {
-      console.log("✅ Route is /me, using user from token");
       userId = req.user.id;
     } else {
-      console.log("⚠️ Route is /:id, parsing ID from params");
       userId = parseInt(req.params.id);
     }
     
-    console.log("📝 Updating user:", userId);
-    console.log("👤 Current user from token:", req.user.id);
-    console.log("📦 Update data:", req.body);
-    
     if (isNaN(userId)) {
-      console.log("❌ userId is NaN!");
       return res.status(400).json({ message: "Invalid user ID" });
     }
     
     const { first_name, last_name, username, email, phone, birth_date, avatar, password } = req.body;
 
-    // Перевірка прав доступу ТІЛЬКИ якщо це НЕ /me
     if (req.path !== "/me" && req.route.path !== "/me" && parseInt(req.user.id) !== parseInt(userId)) {
-      console.log("❌ Access denied:", parseInt(req.user.id), "!==", parseInt(userId));
       return res.status(403).json({ message: "Ви не маєте прав редагувати цей профіль" });
     }
 
-    console.log("✅ Access granted");
-
-    // Якщо є новий пароль - хешуємо
     let hashedPassword = null;
     if (password && password.trim() !== "") {
       hashedPassword = await bcrypt.hash(password, 10);
-      console.log("🔒 Password will be updated");
     }
 
-    // Оновлюємо профіль
     if (hashedPassword) {
       await pool.query(
         `UPDATE users
@@ -113,9 +186,6 @@ export const updateUser = async (req, res) => {
       );
     }
 
-    console.log("✅ User updated successfully");
-
-    // Повертаємо оновлені дані
     const [updatedUser] = await pool.query(
       "SELECT id, first_name, last_name, username, email, phone, birth_date, avatar_url, created_at FROM users WHERE id = ?",
       [userId]
@@ -125,5 +195,18 @@ export const updateUser = async (req, res) => {
   } catch (error) {
     console.error("❌ Помилка оновлення профілю:", error);
     res.status(500).json({ message: "Помилка оновлення профілю", error: error.message });
+  }
+};
+
+// Функція getAllUsers залишається без змін, оскільки вона не потрібна для логіки профілів
+export const getAllUsers = async (req, res) => {
+  try {
+    const [users] = await pool.query(
+      "SELECT id, first_name, last_name, username, email, phone, birth_date, avatar_url, created_at FROM users"
+    );
+    res.json(users);
+  } catch (error) {
+    console.error("Помилка при отриманні користувачів:", error);
+    res.status(500).json({ message: "Помилка сервера" });
   }
 };
