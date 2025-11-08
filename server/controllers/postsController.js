@@ -1,16 +1,14 @@
 import pool from '../models/db.js';
 
 export const getAllPosts = async (req, res) => {
-  const { userId, search } = req.query; 
+  const userId = req.query.userId; 
 
   if (!userId) {
     return res.status(400).json({ message: 'User ID is required to fetch posts' });
   }
 
   try {
-    const params = [userId];
-    
-    let query = `
+    const query = `
       SELECT 
         p.*, 
         u.username AS author_nickname,
@@ -32,19 +30,10 @@ export const getAllPosts = async (req, res) => {
         ) AS comments
       FROM posts p
       JOIN users u ON p.user_id = u.id
+      ORDER BY p.created_at DESC;
     `;
 
-    if (search) {
-      query += `
-        WHERE (p.title LIKE ? OR p.content LIKE ?)
-      `;
-      params.push(`%${search}%`);
-      params.push(`%${search}%`);
-    }
-
-    query += ` ORDER BY p.created_at DESC;`;
-
-    const [posts] = await pool.query(query, params);
+    const [posts] = await pool.query(query, [userId]);
     
     const formattedPosts = posts.map(post => ({
       ...post,
@@ -74,8 +63,9 @@ export const getPostById = async (req, res) => {
 
 export const createPost = async (req, res) => {
   const { title, content, image, user_id } = req.body;
-  if (!title) {
-    return res.status(400).json({ message: "Title is required" });
+  
+  if (!title || title.trim().length < 3) { 
+    return res.status(400).json({ message: "Title must be at least 3 characters long." });
   }
   if (!user_id) {
     return res.status(400).json({ message: "User ID is required" });
@@ -86,6 +76,7 @@ export const createPost = async (req, res) => {
       "INSERT INTO posts (title, content, image, user_id) VALUES (?, ?, ?, ?)", 
       [title, content || null, image || null, user_id]
     );
+    
     res.status(201).json({ 
       message: "Post created", 
       postId: result.insertId,
@@ -99,7 +90,20 @@ export const createPost = async (req, res) => {
 export const updatePost = async (req, res) => {
   const { id } = req.params;
   const { title, content, image } = req.body;
+  const editorId = req.user.id; // ID з токена
+
+  if (!title || title.trim().length < 3) { // ВАЛІДАЦІЯ
+    return res.status(400).json({ message: "Title must be at least 3 characters long." });
+  }
+
   try {
+    // ПЕРЕВІРКА ВЛАСНОСТІ
+    const [post] = await pool.query("SELECT user_id FROM posts WHERE id = ?", [id]);
+    if (post.length === 0) return res.status(404).json({ message: "Post not found" });
+    if (post[0].user_id !== editorId) {
+        return res.status(403).json({ message: "Ви не маєте прав редагувати цей пост." });
+    }
+
     const [result] = await pool.query(
       "UPDATE posts SET title=?, content=?, image=? WHERE id=?", 
       [title, content, image, id]
@@ -113,7 +117,15 @@ export const updatePost = async (req, res) => {
 
 export const deletePost = async (req, res) => {
   const { id } = req.params;
+  const deleterId = req.user.id; 
+  
   try {
+    const [post] = await pool.query("SELECT user_id FROM posts WHERE id = ?", [id]);
+    if (post.length === 0) return res.status(404).json({ message: "Post not found" });
+    if (post[0].user_id !== deleterId) {
+        return res.status(403).json({ message: "Ви не маєте прав видаляти цей пост." });
+    }
+
     await pool.query("DELETE FROM likes WHERE post_id = ? AND item_type = 'post'", [id]);
     await pool.query("DELETE FROM comments WHERE post_id = ? AND item_type = 'post'", [id]);
     const [result] = await pool.query("DELETE FROM posts WHERE id=?", [id]);

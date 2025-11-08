@@ -30,7 +30,6 @@ const CustomAlert = ({ message, type, onClose }) => {
 
 function Register() {
   const navigate = useNavigate();
-  // НОВІ СТАНИ
   const [alertMessage, setAlertMessage] = useState(null);
   const [alertType, setAlertType] = useState('success');
   
@@ -56,8 +55,37 @@ function Register() {
     setForm({ ...form, [e.target.id]: e.target.value });
   };
 
+  const validateForm = () => {
+    const { first_name, last_name, username, email, password } = form;
+    
+    if (!first_name || !last_name || !username || !email || !password) {
+        showAlert("All fields are required.", 'error');
+        return false;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showAlert("Please enter a valid email address.", 'error');
+        return false;
+    }
+    
+    if (username.length < 3) {
+        showAlert("Username must be at least 3 characters long.", 'error');
+        return false;
+    }
+
+    if (password.length < 6) {
+        showAlert("Password must be at least 6 characters long.", 'error');
+        return false;
+    }
+    
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     try {
       await axios.post("http://localhost:5000/api/auth/register", form);
       showAlert("User created successfully!", 'success'); 

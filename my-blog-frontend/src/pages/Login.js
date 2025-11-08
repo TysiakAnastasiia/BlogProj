@@ -33,7 +33,6 @@ function Login() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ usernameOrEmail: "", password: "" });
   
-  // НОВІ СТАНИ
   const [alertMessage, setAlertMessage] = useState(null);
   const [alertType, setAlertType] = useState('success');
   
@@ -44,6 +43,17 @@ function Login() {
   
   const closeAlert = () => setAlertMessage(null);
 
+  const validateForm = () => {
+    if (!form.usernameOrEmail || !form.password) {
+        showAlert("Both username/email and password are required.", 'error');
+        return false;
+    }
+    if (form.password.length < 6) {
+        showAlert("Password must be at least 6 characters long.", 'error');
+        return false;
+    }
+    return true;
+  }
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.id]: e.target.value });
@@ -51,18 +61,20 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     try {
       const res = await axios.post("http://localhost:5000/api/auth/login", form);
       
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user)); 
       
-      console.log("✅ Login successful:", res.data.user);
+      console.log("Login successful:", res.data.user);
       
       showAlert(`Welcome, ${res.data.user.first_name}!`, 'success'); 
       navigate("/dashboard");
     } catch (err) {
-      console.error("❌ Login error:", err.response?.data);
+      console.error("Login error:", err.response?.data);
       showAlert(err.response?.data.message || "Login failed", 'error'); 
     }
   };

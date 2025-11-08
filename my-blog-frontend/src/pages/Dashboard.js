@@ -5,8 +5,6 @@ import api from "../api";
 import Header from "./Header";
 import "../styles/Header.css";
 
-
-// --- НОВИЙ КОМПОНЕНТ ДЛЯ ALERT/TOAST ---
 const CustomAlert = ({ message, type, onClose }) => {
   const [show, setShow] = useState(false);
 
@@ -15,9 +13,8 @@ const CustomAlert = ({ message, type, onClose }) => {
       setShow(true);
       const timer = setTimeout(() => {
         setShow(false);
-        // Викликаємо onClose, щоб очистити стан у батьківському компоненті
         setTimeout(onClose, 400); 
-      }, 3000); // Показуємо 3 секунди
+      }, 3000); 
       return () => clearTimeout(timer);
     }
   }, [message, onClose]);
@@ -31,7 +28,6 @@ const CustomAlert = ({ message, type, onClose }) => {
   );
 };
 
-// --- НОВИЙ КОМПОНЕНТ ДЛЯ CONFIRM ---
 const ConfirmModal = ({ message, onConfirm, onCancel }) => (
   <div className="confirm-modal-overlay">
     <div className="confirm-modal-content" onClick={e => e.stopPropagation()}>
@@ -60,15 +56,13 @@ function Dashboard() {
   const [searchQuery, setSearchQuery] = useState(""); 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(""); 
   
-  // НОВІ СТАНИ для Alert/Confirm
   const [alertMessage, setAlertMessage] = useState(null);
   const [alertType, setAlertType] = useState('success');
-  const [confirmAction, setConfirmAction] = useState(null); // { message, handler, id, itemType/commentId }
+  const [confirmAction, setConfirmAction] = useState(null); 
 
 
   const getItemType = () => contentType === "posts" ? "post" : "movie";
   
-  // Функція для показу Alert
   const showAlert = useCallback((message, type = 'success') => {
     setAlertType(type);
     setAlertMessage(message);
@@ -136,9 +130,36 @@ function Dashboard() {
     setItemInEditor({ type: contentType === "posts" ? "post" : "movie", title: "", content: "", genre: "", year: "", image: null });
   };
 
+  // НОВА ФУНКЦІЯ: Валідація полів контенту та зображень
+  const validateContent = () => {
+    if (!itemInEditor.title || itemInEditor.title.trim().length < 3) {
+      showAlert("Title must be at least 3 characters long.", 'error');
+      return false;
+    }
+
+    if (contentType === "posts" && itemInEditor.content && itemInEditor.content.length > 5000) {
+      showAlert("Post content is too long (max 5000 characters).", 'error');
+      return false;
+    }
+    
+    // Перевірка розміру зображення (для base64)
+    if (itemInEditor.image && itemInEditor.image.length > 5 * 1024 * 1024) { // 5MB limit
+      showAlert("Image size is too large (max 5MB).", 'error');
+      return false;
+    }
+
+    if (contentType === "movies") {
+        const year = parseInt(itemInEditor.year);
+        if (itemInEditor.year && (isNaN(year) || year < 1888 || year > new Date().getFullYear())) {
+             showAlert("Please enter a valid movie year.", 'error');
+             return false;
+        }
+    }
+    return true;
+  };
+
   const handleSaveItem = async () => {
-    if (!itemInEditor.title) {
-      showAlert("Title is required!", 'error');
+    if (!validateContent()) {
       return;
     }
     if (!user || !user.token) { 
@@ -164,8 +185,8 @@ function Dashboard() {
         title: itemInEditor.title,
         genre: itemInEditor.genre || "",
         year: itemInEditor.year || null,
-        image_url: itemInEditor.image || itemInEditor.image_url || "", 
-        created_by: user.id 
+        image: itemInEditor.image || "", 
+        user_id: user.id 
       };
       apiFunction = isEditing ? api.updateMovie : api.createMovie; 
     }
@@ -175,7 +196,7 @@ function Dashboard() {
         await apiFunction(updateId, itemData, user.token);
         
         setPosts(posts.map(p => 
-          p.id === updateId ? { ...p, ...itemData, image_url: itemData.image_url, image: itemData.image } : p
+          p.id === updateId ? { ...p, ...itemData, image: itemData.image } : p
         ));
         
         showAlert("Item updated successfully!");
@@ -209,7 +230,6 @@ function Dashboard() {
     setIsModalOptionsOpen(false);
   };
   
-  // ЗМІНЕНО: Ініціатор підтвердження видалення поста
   const initiatePostDelete = (postId, postType) => {
     const itemLabel = postType === 'posts' ? 'post' : 'movie';
     setConfirmAction({
@@ -221,7 +241,6 @@ function Dashboard() {
     setIsModalOptionsOpen(false);
   };
   
-  // ЗМІНЕНО: Виконання видалення поста
   const executeDeletePost = async (postId, postType) => {
     if (!user || !user.token) { 
       showAlert("You must be logged in!", 'error');
@@ -243,7 +262,7 @@ function Dashboard() {
         console.error("Error deleting item:", err);
         showAlert(`Error deleting: ${err.response?.data?.message || err.message}`, 'error');
     }
-    setConfirmAction(null); // Закриваємо модалку підтвердження
+    setConfirmAction(null);
   };
 
 
@@ -286,7 +305,6 @@ function Dashboard() {
       console.error("Failed to update like:", err);
       showAlert("Failed to update like. Please try again.", 'error');
       
-      // Відкат
       setLikedByMe(originalLikedSet); 
       setPosts(originalPosts); 
        if (selectedPost && selectedPost.id === id) {
@@ -296,7 +314,10 @@ function Dashboard() {
   };
 
   const handleAddComment = async (id, commentText) => {
-    if (!commentText) return;
+    if (!commentText || commentText.trim() === "") {
+      showAlert("Comment cannot be empty.", 'error');
+      return;
+    }
     if (!user || !user.token) { 
       showAlert("You must be logged in to comment!", 'error');
       return;
@@ -327,8 +348,7 @@ function Dashboard() {
       showAlert(`Error adding comment: ${err.response?.data?.message || err.message}`, 'error');
     }
   };
-  
-  // ЗМІНЕНО: Ініціатор підтвердження видалення коментаря
+
   const initiateCommentDelete = (commentId) => {
     setConfirmAction({
       message: "Are you sure you want to delete this comment?",
@@ -337,7 +357,6 @@ function Dashboard() {
     });
   };
 
-  // ЗМІНЕНО: Виконання видалення коментаря
   const executeDeleteComment = async (commentId) => {
     if (!user || !user.token) {
       showAlert("You must be logged in!", 'error');
@@ -363,7 +382,7 @@ function Dashboard() {
       console.error("Error deleting comment:", err);
       showAlert(`Error deleting comment: ${err.response?.data?.message || err.message}`, 'error');
     }
-    setConfirmAction(null); // Закриваємо модалку підтвердження
+    setConfirmAction(null);
   };
 
 
@@ -380,10 +399,8 @@ function Dashboard() {
     <>
       <Header />
       
-      {/* 1. ДОДАНО: Alert/Toast компонент */}
       <CustomAlert message={alertMessage} type={alertType} onClose={() => setAlertMessage(null)} />
 
-      {/* 2. ДОДАНО: Confirm Modal */}
       {confirmAction && (
         <ConfirmModal 
           message={confirmAction.message}
@@ -441,7 +458,7 @@ function Dashboard() {
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
-                      initiatePostDelete(post.id, post.genre ? "movies" : "posts"); // ЗМІНЕНО
+                      initiatePostDelete(post.id, post.genre ? "movies" : "posts");
                     }} 
                     className="delete"
                   >
@@ -477,7 +494,7 @@ function Dashboard() {
                   <div className="options-dropdown" onClick={(e) => e.stopPropagation()}>
                     <button onClick={() => handleEditClick(selectedPost)}>Edit</button>
                     <button 
-                      onClick={() => initiatePostDelete(selectedPost.id, selectedPost.genre ? "movies" : "posts")} // ЗМІНЕНО
+                      onClick={() => initiatePostDelete(selectedPost.id, selectedPost.genre ? "movies" : "posts")}
                       className="delete"
                     >
                       Delete
@@ -519,7 +536,7 @@ function Dashboard() {
                         {user && user.id === comment.author_id && (
                           <button 
                             className="comment-delete-btn"
-                            onClick={() => initiateCommentDelete(comment.id)} // ЗМІНЕНО
+                            onClick={() => initiateCommentDelete(comment.id)}
                           >
                             &times;
                           </button>

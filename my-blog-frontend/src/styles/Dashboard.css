@@ -563,7 +563,6 @@ img.post-modal-image {
   border-bottom: 1px solid var(--border-color);
   padding-bottom: 10px;
 }
-/* --- СУЧАСНІ СТИЛІ ДЛЯ СПЛИТАЮЧИХ ПОВІДОМЛЕНЬ (TOAST/ALERT) --- */
 
 .app-alert {
   position: fixed;
@@ -582,7 +581,6 @@ img.post-modal-image {
   display: flex;
   align-items: center;
   gap: 10px;
-  /* Для плавнішого вигляду використовуємо фон підсвітки */
   background-color: var(--surface-hover); 
 }
 
@@ -592,22 +590,19 @@ img.post-modal-image {
 }
 
 .app-alert.success {
-  /* НОВИЙ СТИЛЬ: Синій акцент з м'яким світінням */
-  background-color: #213550; /* Глибокий синьо-сірий */
-  color: #87CEEB; /* Небесно-блакитний текст */
-  border: 1px solid #3B82F6; /* Акцентна рамка */
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); /* М'яке синє світіння */
+  background-color: #213550; 
+  color: #87CEEB; 
+  border: 1px solid #3B82F6; 
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); 
 }
 
 .app-alert.error {
-  /* НОВИЙ СТИЛЬ: Фіолетово-рожевий акцент для помилок */
-  background-color: #311B27; /* Дуже темно-фіолетовий */
-  color: #FFB6C1; /* Світло-рожевий текст */
-  border: 1px solid #CC4B7B; /* Насичений рожевий для рамки */
-  box-shadow: 0 0 15px rgba(204, 75, 123, 0.5); /* М'яке рожеве світіння */
+  background-color: #311B27; 
+  color: #FFB6C1; 
+  border: 1px solid #CC4B7B; 
+  box-shadow: 0 0 15px rgba(204, 75, 123, 0.5); 
 }
 
-/* Іконки тепер використовують кольори тексту */
 .app-alert::before {
   content: ''; 
   font-family: 'Font Awesome 5 Free'; 
@@ -624,7 +619,6 @@ img.post-modal-image {
   color: inherit;
 }
 
-/* --- СТИЛІ ДЛЯ МОДАЛКИ ПІДТВЕРДЖЕННЯ (CONFIRM) --- */
 
 .confirm-modal-overlay {
   position: fixed;
@@ -676,7 +670,6 @@ img.post-modal-image {
 }
 
 .confirm-actions .btn-confirm {
-  /* ПІДТВЕРДЖЕННЯ (Confirm): Ваш Акцентний Градієнт */
   background: var(--accent-gradient); 
   color: var(--accent-text);
 }
@@ -686,7 +679,6 @@ img.post-modal-image {
 }
 
 .confirm-actions .btn-cancel {
-  /* ВІДМІНА (Cancel): Колір поверхні */
   background: var(--surface-hover); 
   color: var(--text-color);
   border: 1px solid var(--border-color);
@@ -696,7 +688,6 @@ img.post-modal-image {
   transform: translateY(-2px);
 }
 
-/* --- Анімації --- */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }

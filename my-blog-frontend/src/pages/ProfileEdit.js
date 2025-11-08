@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react"; 
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/ProfileEdit.css";
 import { getProfile, updateProfile } from "../api";
@@ -29,7 +29,10 @@ const CustomAlert = ({ message, type, onClose }) => {
 
 function ProfileEdit() {
   const navigate = useNavigate();
-  const [profileData, setProfileData] = useState(null);
+  const [profileData, setProfileData] = useState({
+      first_name: "", last_name: "", username: "", email: "", 
+      phone: "", birth_date: ""
+  }); 
   const [profilePic, setProfilePic] = useState(null);
   const [loading, setLoading] = useState(false);
   
@@ -76,6 +79,7 @@ function ProfileEdit() {
     fetchProfile(); 
   }, [navigate, showAlert]); 
 
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProfileData((prev) => ({ ...prev, [name]: value }));
@@ -88,8 +92,35 @@ function ProfileEdit() {
     reader.onload = () => setProfilePic(reader.result);
     reader.readAsDataURL(file);
   };
+  
+  const validateForm = () => {
+    const { first_name, last_name, username, email } = profileData;
+    
+    if (!first_name || !last_name || !username || !email) {
+        showAlert("All main fields (Name, Username, Email) are required.", 'error');
+        return false;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showAlert("Please enter a valid email address.", 'error');
+        return false;
+    }
+    
+    if (username.length < 3) {
+        showAlert("Username must be at least 3 characters long.", 'error');
+        return false;
+    }
+    
+    return true;
+  };
+  
 
   const handleSubmit = async () => {
+    if (!validateForm()) {
+        return;
+    }
+
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
@@ -117,7 +148,7 @@ function ProfileEdit() {
     }
   };
 
-  if (!profileData) return <div className="loading">Loading...</div>;
+  if (!profileData || !profileData.id) return <div className="loading">Loading...</div>;
 
   return (
     <div className="profile-edit-page">

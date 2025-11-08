@@ -1,16 +1,14 @@
 import pool from '../models/db.js';
 
 export const getAllMovies = async (req, res) => {
-  const { userId, search } = req.query; 
+  const userId = req.query.userId;
 
   if (!userId) {
     return res.status(400).json({ message: 'User ID is required' });
   }
 
   try {
-    const params = [userId]; 
-    
-    let query = `
+    const query = `
       SELECT 
         m.*, 
         u.username AS author_nickname, 
@@ -32,19 +30,10 @@ export const getAllMovies = async (req, res) => {
         ) AS comments
       FROM movies m
       JOIN users u ON m.user_id = u.id
+      ORDER BY m.created_at DESC;
     `;
-
-    if (search) {
-      query += `
-        WHERE (m.title LIKE ? OR m.genre LIKE ?)
-      `;
-      params.push(`%${search}%`);
-      params.push(`%${search}%`);
-    }
     
-    query += ` ORDER BY m.created_at DESC;`;
-
-    const [movies] = await pool.query(query, params);
+    const [movies] = await pool.query(query, [userId]);
     
     const formattedMovies = movies.map(movie => ({
       ...movie,
@@ -74,8 +63,9 @@ export const getMovieById = async (req, res) => {
 
 export const createMovie = async (req, res) => {
   const { title, genre, year, image, user_id } = req.body; 
-  if (!title) {
-    return res.status(400).json({ message: "Title is required" });
+  
+  if (!title || title.trim().length < 3) { // ВАЛІДАЦІЯ
+    return res.status(400).json({ message: "Title must be at least 3 characters long." });
   }
   if (!user_id) {
     return res.status(400).json({ message: "User ID is required" });
@@ -100,8 +90,20 @@ export const createMovie = async (req, res) => {
 export const updateMovie = async (req, res) => {
   const { id } = req.params;
   const { title, genre, year, image } = req.body;
+  const editorId = req.user.id; // ID з токена
+
+  if (!title || title.trim().length < 3) { // ВАЛІДАЦІЯ
+    return res.status(400).json({ message: "Title must be at least 3 characters long." });
+  }
   
   try {
+    // ПЕРЕВІРКА ВЛАСНОСТІ
+    const [movie] = await pool.query("SELECT user_id FROM movies WHERE id = ?", [id]);
+    if (movie.length === 0) return res.status(404).json({ message: "Movie not found" });
+    if (movie[0].user_id !== editorId) {
+        return res.status(403).json({ message: "Ви не маєте прав редагувати цей фільм." });
+    }
+
     const [result] = await pool.query(
       "UPDATE movies SET title=?, genre=?, year=?, image=? WHERE id=?", 
       [title, genre, year, image, id]
@@ -116,8 +118,16 @@ export const updateMovie = async (req, res) => {
 
 export const deleteMovie = async (req, res) => {
   const { id } = req.params;
-  
+  const deleterId = req.user.id; // ID з токена
+
   try {
+    // ПЕРЕВІРКА ВЛАСНОСТІ
+    const [movie] = await pool.query("SELECT user_id FROM movies WHERE id = ?", [id]);
+    if (movie.length === 0) return res.status(404).json({ message: "Movie not found" });
+    if (movie[0].user_id !== deleterId) {
+        return res.status(403).json({ message: "Ви не маєте прав видаляти цей фільм." });
+    }
+    
     await pool.query("DELETE FROM likes WHERE post_id = ? AND item_type = 'movie'", [id]);
     await pool.query("DELETE FROM comments WHERE post_id = ? AND item_type = 'movie'", [id]);
     const [result] = await pool.query("DELETE FROM movies WHERE id=?", [id]);

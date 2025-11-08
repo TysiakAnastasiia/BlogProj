@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import "../styles/Profile.css";
 import Header from "./Header";
 import axios from "axios";
+import defaultImage from "../styles/def.png"; 
 
 const CustomAlert = ({ message, type, onClose }) => {
   const [show, setShow] = useState(false);
@@ -32,11 +33,14 @@ function OtherProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  
   const [posts, setPosts] = useState([]);
+  const [movies, setMovies] = useState([]); 
+  const [contentType, setContentType] = useState("posts"); 
+  
   const [viewMode, setViewMode] = useState("grid");
   const [following, setFollowing] = useState(false);
   
-  // НОВІ СТАНИ
   const [alertMessage, setAlertMessage] = useState(null);
   const [alertType, setAlertType] = useState('success');
 
@@ -71,8 +75,12 @@ function OtherProfilePage() {
           ...res.data,
           avatar: res.data.avatar_url || "https://i.imgur.com/3GvwNBf.png",
         });
+        
         setPosts(res.data.posts || []);
+        setMovies(res.data.movies || []);
+        
         setFollowing(res.data.isFollowing || false);
+
       } catch (err) {
         console.error("Помилка при завантаженні користувача:", err);
         showAlert("User not found", 'error'); 
@@ -115,6 +123,7 @@ function OtherProfilePage() {
     }
   };
 
+  const displayItems = contentType === "posts" ? posts : movies;
 
   if (!user) return <p>Loading...</p>;
 
@@ -124,7 +133,7 @@ function OtherProfilePage() {
       <Header />
 
       <header className="profile-header">
-        <h1>PROFILE</h1>
+        <h1>{user.username}'S PROFILE</h1>
         <button className="edit-button" onClick={() => navigate("/dashboard")}>
           Go to Dashboard
         </button>
@@ -142,7 +151,7 @@ function OtherProfilePage() {
         <div className="info-right">
           <div className="profile-stats">
             <div><strong>{posts.length}</strong> posts</div>
-            <div><strong>{user.watched || 0}</strong> watched</div>
+            <div><strong>{movies.length || 0}</strong> movies</div>
             <div><strong>{user.followers || 0}</strong> followers</div>
             <div><strong>{user.following || 0}</strong> follow</div>
           </div>
@@ -155,18 +164,50 @@ function OtherProfilePage() {
       </section>
 
       <section className="posts-section">
-        <h2 className="posts-title">POSTS</h2>
+        <h2 className="posts-title">CONTENT</h2>
+        
+        <div className="content-type-toggle">
+          <button
+            className={contentType === "posts" ? "active" : ""}
+            onClick={() => setContentType("posts")}
+          >
+            Posts ({posts.length})
+          </button>
+          <button
+            className={contentType === "movies" ? "active" : ""}
+            onClick={() => setContentType("movies")}
+          >
+            Movies ({movies.length})
+          </button>
+        </div>
+
         <div className="view-mode-toggle">
           <button className={viewMode === "grid" ? "active" : ""} onClick={() => setViewMode("grid")}>Grid</button>
           <button className={viewMode === "list" ? "active" : ""} onClick={() => setViewMode("list")}>List</button>
         </div>
+        
         <div className={`posts-container ${viewMode}`}>
-          {posts.map(post => (
-            <div key={post.id} className="post-card">
-              <img src={post.image || post.image_url} alt={post.title} className="post-image" />
-              {viewMode === "list" && <h3 className="post-card-title">{post.title}</h3>}
-            </div>
-          ))}
+          {displayItems.length === 0 ? (
+            <p style={{ color: 'var(--text-light)', textAlign: 'center', width: '100%' }}>
+              No {contentType} found for this user.
+            </p>
+          ) : (
+            displayItems.map(item => (
+              <div key={item.id} className="post-card">
+                <img 
+                  src={item.image || item.image_url || defaultImage} 
+                  alt={item.title} 
+                  className="post-image" 
+                />
+                <div className="post-caption">
+                    <strong>{item.title}</strong>
+                    {viewMode === "list" && item.genre && (
+                       <span> ({item.year}) - {item.genre}</span>
+                    )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </section>
     </div>
