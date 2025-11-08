@@ -11,13 +11,7 @@ import OtherProfilePage from "./pages/OtherProfile"; // додано
 function App() {
   return (
     <Router>
-      <div style={{ textAlign: "center", marginTop: "20px" }}>
-        <nav>
-          <Link to="/login" style={{ margin: "0 10px" }}>Login</Link>
-          <Link to="/register" style={{ margin: "0 10px" }}>Register</Link>
-          <Link to="/profile" style={{ margin: "0 10px" }}>Profile</Link>
-        </nav>
-
+      <div>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

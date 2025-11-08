@@ -47,6 +47,7 @@ body {
 
 /* Заголовок форми */
 .title {
+  margin-top: 0;
   font-size: 2rem;
   color: #5d4037;
   margin-bottom: 30px;
