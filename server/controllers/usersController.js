@@ -1,19 +1,17 @@
 import pool from "../models/db.js";
 import bcrypt from "bcryptjs";
 
-// --- НОВІ ФУНКЦІЇ ДЛЯ ПІДПИСКИ ---
+// --- ФУНКЦІЇ ДЛЯ ПІДПИСКИ ---
 
 export const followUser = async (req, res) => {
-  const followerId = req.user.id; // ID того, хто підписується (з токена)
-  const followingId = req.params.id; // ID того, на кого підписуються (з URL)
+  const followerId = req.user.id;
+  const followingId = req.params.id;
 
-  // Перевірка на само-підписку
   if (followerId == followingId) {
     return res.status(400).json({ message: "Ви не можете підписатися самі на себе" });
   }
 
   try {
-    // Перевірка, чи підписка вже існує
     const [existing] = await pool.query(
       "SELECT * FROM follows WHERE follower_id = ? AND following_id = ?",
       [followerId, followingId]
@@ -23,7 +21,6 @@ export const followUser = async (req, res) => {
       return res.status(400).json({ message: "Ви вже підписані на цього користувача" });
     }
 
-    // Створення підписки
     await pool.query(
       "INSERT INTO follows (follower_id, following_id) VALUES (?, ?)",
       [followerId, followingId]
@@ -37,8 +34,8 @@ export const followUser = async (req, res) => {
 };
 
 export const unfollowUser = async (req, res) => {
-  const followerId = req.user.id; // ID того, хто відписується
-  const followingId = req.params.id; // ID того, від кого відписуються
+  const followerId = req.user.id;
+  const followingId = req.params.id;
 
   try {
     const [result] = await pool.query(
@@ -47,7 +44,6 @@ export const unfollowUser = async (req, res) => {
     );
 
     if (result.affectedRows === 0) {
-      // Це не критична помилка, але корисно знати
       return res.status(400).json({ message: "Ви не були підписані на цього користувача" });
     }
 
@@ -63,15 +59,10 @@ export const unfollowUser = async (req, res) => {
 
 // Отримати користувача за ID (для сторінки іншого користувача)
 export const getUserById = async (req, res) => {
-  const profileId = req.params.id; // ID профілю, який ми дивимось
-  const viewerId = req.user.id;   // ID того, хто дивиться (з токена)
+  const profileId = req.params.id;
+  const viewerId = req.user.id;
 
   try {
-    // Великий запит, який робить все:
-    // 1. Бере дані користувача
-    // 2. Рахує його підписників (followers)
-    // 3. Рахує його підписки (following)
-    // 4. Перевіряє, чи ви (viewer) підписані на нього (isFollowing)
     const [rows] = await pool.query(
       `SELECT 
         u.id, u.first_name, u.last_name, u.username, u.email, u.phone, u.birth_date, u.avatar_url, u.created_at,
@@ -80,24 +71,40 @@ export const getUserById = async (req, res) => {
         (SELECT COUNT(*) FROM follows WHERE follower_id = ? AND following_id = u.id) > 0 AS isFollowing
       FROM users u
       WHERE u.id = ?`,
-      [viewerId, profileId] // [viewerId] -> ?, [profileId] -> u.id
+      [viewerId, profileId]
     );
 
     if (rows.length === 0) {
       return res.status(404).json({ message: "Користувача не знайдено" });
     }
 
-    // Отримуємо пости користувача (як очікує фронтенд)
-    // Я припускаю, що ваша таблиця постів називається 'posts', а колонка 'user_id'
+    // Отримуємо ТІЛЬКИ пости цього користувача
     const [posts] = await pool.query(
-      "SELECT * FROM posts WHERE user_id = ? ORDER BY created_at DESC", 
+      `SELECT 
+        p.id, p.title, p.content, p.image, p.created_at, p.user_id,
+        (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id AND l.item_type = 'post') AS likes
+      FROM posts p 
+      WHERE p.user_id = ? 
+      ORDER BY p.created_at DESC`, 
+      [profileId]
+    );
+
+    // Отримуємо ТІЛЬКИ movies цього користувача
+    const [movies] = await pool.query(
+      `SELECT 
+        m.id, m.title, m.genre, m.year, m.image, m.created_at, m.user_id,
+        (SELECT COUNT(*) FROM likes l WHERE l.post_id = m.id AND l.item_type = 'movie') AS likes
+      FROM movies m 
+      WHERE m.user_id = ? 
+      ORDER BY m.created_at DESC`, 
       [profileId]
     );
 
     const user = rows[0];
-    // 'isFollowing' - це 1 (true) або 0 (false), конвертуємо в boolean
-    user.isFollowing = !!user.isFollowing; 
-    user.posts = posts; // Додаємо пости до відповіді
+    user.isFollowing = !!user.isFollowing;
+    user.posts = posts;
+    user.movies = movies;
+    user.watched = movies.length;
 
     res.json(user);
 
@@ -113,7 +120,6 @@ export const getMe = async (req, res) => {
   try {
     console.log("🔍 Getting profile for user ID:", userId);
 
-    // Схожий запит, але без 'isFollowing' (ви не можете бути підписані самі на себе)
     const [rows] = await pool.query(
       `SELECT 
         u.id, u.first_name, u.last_name, u.username, u.email, u.phone, u.birth_date, u.avatar_url, u.created_at,
@@ -128,16 +134,34 @@ export const getMe = async (req, res) => {
       return res.status(404).json({ message: "Користувача не знайдено" });
     }
 
-    // Також отримуємо пости
+    // Отримуємо ТІЛЬКИ пости цього користувача
     const [posts] = await pool.query(
-      "SELECT * FROM posts WHERE user_id = ? ORDER BY created_at DESC", 
+      `SELECT 
+        p.id, p.title, p.content, p.image, p.created_at, p.user_id,
+        (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id AND l.item_type = 'post') AS likes
+      FROM posts p 
+      WHERE p.user_id = ? 
+      ORDER BY p.created_at DESC`, 
+      [userId]
+    );
+
+    // Отримуємо ТІЛЬКИ movies цього користувача
+    const [movies] = await pool.query(
+      `SELECT 
+        m.id, m.title, m.genre, m.year, m.image, m.created_at, m.user_id,
+        (SELECT COUNT(*) FROM likes l WHERE l.post_id = m.id AND l.item_type = 'movie') AS likes
+      FROM movies m 
+      WHERE m.user_id = ? 
+      ORDER BY m.created_at DESC`, 
       [userId]
     );
 
     const user = rows[0];
-    user.posts = posts; // Додаємо пости до об'єкта користувача
+    user.posts = posts;
+    user.movies = movies;
+    user.watched = movies.length;
 
-    console.log("✅ Profile found:", user);
+    console.log("✅ Profile found with", posts.length, "posts and", movies.length, "movies");
     res.json(user);
   } catch (error) {
     console.error("❌ Помилка при отриманні профілю:", error);
@@ -145,7 +169,7 @@ export const getMe = async (req, res) => {
   }
 };
 
-// --- Існуюча функція updateUser (без змін) ---
+// Оновити профіль
 export const updateUser = async (req, res) => {
   try {
     let userId;
@@ -198,7 +222,6 @@ export const updateUser = async (req, res) => {
   }
 };
 
-// Функція getAllUsers залишається без змін, оскільки вона не потрібна для логіки профілів
 export const getAllUsers = async (req, res) => {
   try {
     const [users] = await pool.query(
