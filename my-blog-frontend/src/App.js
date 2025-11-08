@@ -25,7 +25,7 @@ function App() {
           <Route path="/profile/edit" element={<ProfileEdit />} />
           <Route path="/profile/:userId" element={<OtherProfilePage />} /> {/* чужий профіль */}
           <Route path="/dashboard" element={<Dashboard />} />
-          
+          <Route path="/users/:id" element={<OtherProfilePage />} />
           {/* Catch-all route for 404 */}
           <Route path="*" element={<NotFound />} />
         </Routes>

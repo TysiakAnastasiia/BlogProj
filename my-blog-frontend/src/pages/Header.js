@@ -1,42 +1,80 @@
-import React, { useState } from 'react';
-import '../styles/Header.css'; 
-
-// 1. Імпортуємо потрібні іконки
-// FaHome = Головна, FaUserCircle = Профіль, FaSignOutAlt = Вийти, FaSearch = Пошук
-import { FaHome, FaUserCircle, FaSignOutAlt, FaSearch } from 'react-icons/fa';
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import "../styles/Header.css";
+import { FaHome, FaUserCircle, FaSignOutAlt, FaSearch } from "react-icons/fa";
+import axios from "axios";
 
 function Header() {
-  const [userSearch, setUserSearch] = useState('');
+  const [userSearch, setUserSearch] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const navigate = useNavigate();
+  const dropdownRef = useRef();
 
-  // Функція для виходу з акаунту
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    window.location.href = '/login'; 
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    navigate("/login");
   };
 
-  // Функція для пошуку користувача
-  const handleUserSearch = (e) => {
-    e.preventDefault();
-    if (!userSearch.trim()) return; // Не шукати, якщо пусто
-    
-    alert(`Пошук користувача: "${userSearch}" (ще не реалізовано)`);
-  };
+  // Фетч користувачів за нікнеймом
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (!userSearch.trim()) {
+        setSearchResults([]);
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get("http://localhost:5000/api/users", {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { q: userSearch }, // на бекенді треба підтримати query param q
+        });
+        // Фільтруємо локально, якщо бекенд не підтримує search
+        setSearchResults(
+          res.data.filter((u) =>
+            u.username.toLowerCase().includes(userSearch.toLowerCase())
+          )
+        );
+      } catch (err) {
+        console.error(err);
+        setSearchResults([]);
+      }
+    };
+
+    fetchUsers();
+  }, [userSearch]);
+
+  // Закриття дропдауну при кліку поза ним
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setSearchResults([]);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <nav className="main-header">
       <div className="header-left">
-        {/* 2. Посилання на Dashboard (головну) з іконкою */}
         <a href="/dashboard" className="header-icon-button" aria-label="Dashboard">
           <FaHome />
         </a>
       </div>
-      
-      <div className="header-center">
-        {/* 3. Оновлена форма пошуку */}
-        <form onSubmit={handleUserSearch} className="user-search-form">
-          <input 
-            type="text" 
-            placeholder="Find friends..." 
+
+      <div className="header-center" ref={dropdownRef}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (searchResults[0]) navigate(`/profile/${searchResults[0].id}`);
+          }}
+          className="user-search-form"
+        >
+          <input
+            type="text"
+            placeholder="Find friends..."
             value={userSearch}
             onChange={(e) => setUserSearch(e.target.value)}
             className="user-search-input"
@@ -45,14 +83,30 @@ function Header() {
             <FaSearch />
           </button>
         </form>
+
+        {searchResults.length > 0 && (
+          <div className="search-dropdown">
+            {searchResults.map((user) => (
+              <div
+                key={user.id}
+                className="search-result-item"
+                onClick={() => {
+                  navigate(`/profile/${user.id}`);
+                  setUserSearch("");
+                  setSearchResults([]);
+                }}
+              >
+                {user.username}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-      
+
       <div className="header-right">
-        {/* 4. Посилання на профіль з іконкою*/}
         <a href="/profile" className="header-icon-button" aria-label="My Profile">
           <FaUserCircle />
         </a>
-        {/* 5. Кнопка виходу з іконкою */}
         <button onClick={handleLogout} className="header-icon-button" aria-label="Logout">
           <FaSignOutAlt />
         </button>

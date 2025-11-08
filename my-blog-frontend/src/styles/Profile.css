@@ -9,16 +9,12 @@ body {
 button {
   font-family: inherit;
   cursor: pointer;
-  background-color: #60574c;
-  border: 1px solid #dcd1b8;
   border-radius: 5px;
-  padding: 8px 12px;
-  color: #60574c;
-  font-size: 0.9rem;
+  transition: all 0.3s ease;
 }
 
 button:hover {
-  background-color: #7e7468;
+  filter: brightness(1.1);
 }
 
 h1, h2, h3 {
@@ -41,7 +37,6 @@ h1, h2, h3 {
   padding: 10px 20px;
   background-color: #e6e1d1;
   border-bottom: 2px solid #dcd1b8;
-  color: #60574c;
 }
 
 .profile-header h1 {
@@ -117,6 +112,41 @@ h1, h2, h3 {
   padding: 5px 10px;
   border-radius: 5px;
   font-size: 0.9rem;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.profile-actions button {
+  font-size: 0.85rem;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: bold;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  transition: all 0.3s ease;
+}
+
+.profile-actions button:first-child {
+  background-color: #60574c;
+  color: #fff;
+}
+
+.profile-actions button:first-child:hover {
+  background-color: #7e7468;
+}
+
+.profile-actions button:last-child {
+  background-color: #f0eada;
+  color: #60574c;
+  border: 1px solid #dcd1b8;
+}
+
+.profile-actions button:last-child:hover {
+  background-color: #e6e1d1;
 }
 
 .posts-section {
