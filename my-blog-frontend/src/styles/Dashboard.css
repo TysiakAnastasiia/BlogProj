@@ -1,12 +1,11 @@
-/* --- Fonts & Base --- */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&family=Playfair+Display:wght@700&display=swap');
-
 :root {
   --bg-color: #fcf8ee;
-  --text-color: #8d6e63;
-  --text-light: #b0aead;
+  --text-color: #60574c; /* головний темний колір */
+  --text-light: #a9988b;
   --box-bg: #ffffff;
-  --accent-color: #8c6a48;
+  --accent-color: #60574c; /* кнопки Edit і активні */
+  --hover-gradient: linear-gradient(135deg, #f5f3ec, #eae3d4);
+  --card-gradient: linear-gradient(135deg, #fff, #f7f3e8);
 }
 
 .dashboard-container {
@@ -28,21 +27,25 @@
   font-size: 2rem;
   font-weight: 700;
   margin: 0;
+  color: var(--text-color);
 }
 
 .add-post-button {
-  background-color: var(--box-bg);
+  background: var(--hover-gradient);
   border: none;
-  border-radius: 20px;
+  border-radius: 25px;
   padding: 10px 20px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  transition: background 0.3s;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
 }
 
 .add-post-button:hover {
-  background-color: #f5f5f5;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  background: linear-gradient(135deg, #eae3d4, #f5f3ec);
+  color: var(--accent-color);
 }
 
 /* View Toggle */
@@ -55,16 +58,44 @@
 
 .view-mode-toggle button {
   padding: 8px 15px;
-  border-radius: 15px;
+  border-radius: 20px;
   border: none;
   font-weight: 600;
   cursor: pointer;
-  background-color: var(--box-bg);
+  background: var(--hover-gradient);
+  transition: all 0.3s ease;
 }
 
 .view-mode-toggle button.active {
-  background-color: var(--accent-color);
+  background: var(--accent-color);
   color: #fff;
+}
+
+.content-type-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.content-type-toggle button {
+  padding: 8px 18px;
+  border-radius: 20px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  background-color: #fdf6ec; /* світлий фон */
+  color: #60574c; /* темний текст */
+  transition: all 0.3s ease;
+}
+
+.content-type-toggle button:hover {
+  background-color: #f7eedc; /* трохи темніше при hover */
+}
+
+.content-type-toggle button.active {
+  background-color: #60574c; /* темна активна кнопка */
+  color: #fff; /* білий текст */
 }
 
 /* Posts Grid/List */
@@ -81,16 +112,17 @@
 }
 
 .post-card {
-  background-color: var(--box-bg);
+  background: var(--card-gradient);
   border-radius: 20px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.08);
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .post-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 12px 25px rgba(0,0,0,0.12);
 }
 
 /* Square Images */
@@ -103,15 +135,16 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  border-radius: 20px 20px 0 0;
 }
 
 .posts-container.list .post-card {
   flex-direction: row;
-  height: 120px;
+  height: 130px;
 }
 
 .posts-container.list .post-card img.post-image {
-  width: 120px;
+  width: 130px;
   height: 100%;
   border-radius: 15px;
   object-fit: cover;
@@ -141,7 +174,7 @@
 }
 
 .post-modal-content {
-  background-color: var(--box-bg);
+  background: var(--card-gradient);
   border-radius: 20px;
   width: 90%;
   max-width: 600px;
@@ -151,6 +184,7 @@
   display: flex;
   flex-direction: column;
   padding: 20px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
 }
 
 .post-modal img {
@@ -170,6 +204,7 @@
   font-size: 1.5rem;
   font-weight: bold;
   cursor: pointer;
+  color: var(--accent-color);
 }
 
 /* Likes & Comments */
@@ -196,24 +231,27 @@
 .post-comments input {
   width: 100%;
   margin-top: 10px;
-  padding: 8px 10px;
-  border-radius: 10px;
+  padding: 10px 12px;
+  border-radius: 20px;
   border: 1px solid #ccc;
 }
 
+/* Add Image */
 .add-image-label {
   display: inline-block;
   margin-top: 10px;
-  padding: 8px 12px;
-  background-color: var(--box-bg);
-  border-radius: 15px;
+  padding: 10px 16px;
+  background: var(--hover-gradient);
+  border-radius: 20px;
   cursor: pointer;
   font-weight: 600;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
 }
 
 .add-image-label:hover {
-  background-color: #f5f5f5;
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #eae3d4, #f5f3ec);
 }
 
 .image-preview {
@@ -224,17 +262,18 @@
   border-radius: 15px;
 }
 
-/* --- Search Field --- */
+/* Search */
 .search-container {
   display: flex;
   justify-content: center;
   margin: 15px 0;
+  position: relative;
 }
 
 .search-input {
   width: 100%;
   max-width: 400px;
-  padding: 12px 40px 12px 15px;
+  padding: 12px 15px;
   border-radius: 25px;
   border: 2px solid #ddd;
   font-size: 1rem;
@@ -242,7 +281,6 @@
   transition: all 0.3s ease;
   background-color: var(--box-bg);
   box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  position: relative;
 }
 
 .search-input::placeholder {
@@ -254,18 +292,4 @@
   outline: none;
   border-color: var(--accent-color);
   box-shadow: 0 6px 15px rgba(0,0,0,0.1);
-}
-
-.search-container::before {
-  content: "🔍";
-  position: absolute;
-  left: calc(50% - 200px + 10px); /* враховуємо max-width */
-  font-size: 1.2rem;
-  color: var(--text-light);
-  pointer-events: none;
-  transition: left 0.3s ease;
-}
-
-.search-input:focus + .search-icon {
-  color: var(--accent-color);
 }

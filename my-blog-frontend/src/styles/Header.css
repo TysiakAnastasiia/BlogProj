@@ -1,0 +1,127 @@
+/* Скидаємо відступи */
+body, html {
+  margin: 0;
+  padding: 0;
+}
+
+/* Основний контейнер меню */
+.main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+
+  background-color: var(--box-bg);
+  border-bottom: 1px solid #eae3d4;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
+  width: 100%;        /* повна ширина */
+  max-width: 100%;    /* без обмежень */
+  box-sizing: border-box;
+
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Лівий блок (Dashboard) */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* Центр (форма пошуку) */
+.header-center {
+  flex: 1;                /* займає весь доступний простір */
+  display: flex;
+  justify-content: center;
+  margin: 0 10px;
+  min-width: 0;           /* дозволяє input стискатися */
+}
+
+/* Права частина (профіль + вихід) */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* Форма пошуку */
+.user-search-form {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+}
+
+.user-search-input {
+  width: 100%;
+  padding: 10px 40px 10px 15px;
+  border-radius: 25px;
+  border: 2px solid #eae3d4;
+  font-size: 0.9rem;
+  font-family: 'Montserrat', sans-serif;
+  transition: all 0.3s ease;
+  background-color: var(--bg-color);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  color: var(--text-color);
+}
+
+.user-search-input::placeholder {
+  color: var(--text-light);
+}
+
+.user-search-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+  background-color: var(--box-bg);
+}
+
+/* Кнопка пошуку */
+.user-search-button {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-light);
+  font-size: 1.1rem;
+}
+
+/* Кнопки-іконки */
+.header-icon-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.5rem;
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+}
+
+.header-icon-button:hover {
+  color: var(--text-color);
+  transform: scale(1.1);
+}
+
+/* Адаптив для маленьких екранів */
+@media (max-width: 600px) {
+  .header-center {
+    max-width: 200px;
+  }
+
+  .user-search-input {
+    font-size: 0.8rem;
+  }
+
+  .header-icon-button {
+    font-size: 1.3rem;
+  }
+}

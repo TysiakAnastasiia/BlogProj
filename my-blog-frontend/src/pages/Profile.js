@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Profile.css";
-import { getProfile } from "../api"; // 👈 імпорт із api.js
+import Header from "./Header";         
+import { getProfile } from "../api";
 
 function ProfilePage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [posts, setPosts] = useState([]); // можеш потім додати завантаження постів
+  const [posts, setPosts] = useState([]); 
   const [viewMode, setViewMode] = useState("grid");
 
   useEffect(() => {
@@ -17,7 +18,11 @@ function ProfilePage() {
         if (!token) return navigate("/login");
 
         const userData = await getProfile(token);
-        setUser(userData);
+
+        setUser({
+          ...userData,
+          avatar: userData.avatar_url || "https://i.imgur.com/gBqR1gq.jpeg",
+        });
       } catch (err) {
         console.error("Помилка при отриманні профілю:", err);
       }
@@ -29,6 +34,9 @@ function ProfilePage() {
 
   return (
     <div className="profile-page">
+      {/* --- Додаємо хедер --- */}
+      <Header />
+
       <header className="profile-header">
         <h1>PROFILE</h1>
         <div>
@@ -46,9 +54,7 @@ function ProfilePage() {
           <div
             className="profile-avatar-placeholder"
             style={{
-              backgroundImage: `url(${
-                user.avatar || "https://i.imgur.com/gBqR1gq.jpeg"
-              })`,
+              backgroundImage: `url(${user.avatar})`,
             }}
           ></div>
           <span className="profile-name">

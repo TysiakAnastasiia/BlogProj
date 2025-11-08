@@ -3,6 +3,10 @@ import "../styles/Dashboard.css";
 import defaultImage from "../styles/wed.jpg";
 import axios from "axios";
 
+// 1. Імпортуємо компонент Header та його стилі
+import Header from "./Header"; 
+import "../styles/Header.css";
+
 function Dashboard() {
   const [posts, setPosts] = useState([]);
   const [viewMode, setViewMode] = useState("grid");
@@ -42,7 +46,6 @@ function Dashboard() {
     )
   );
 
-  // ✅ ВИПРАВЛЕНО: Відправляємо дані на сервер
   const handleAddItem = async () => {
     if (!newItem.title) {
       alert("Title is required!");
@@ -124,129 +127,134 @@ function Dashboard() {
   };
 
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-header">
-        <h1>{contentType === "posts" ? "Posts" : "Movies"}</h1>
-        <button className="add-post-button" onClick={() => {
-          setAddModal(true); 
-          setNewItem(prev => ({ ...prev, type: contentType === "posts" ? "post" : "movie" }));
-        }}>
-          + Add {contentType === "posts" ? "Post" : "Movie"}
-        </button>
-      </div>
+    <>
+      {/* 3. Додаємо компонент меню */}
+      <Header />
 
-      <div className="content-type-toggle">
-        <button className={contentType === "posts" ? "active" : ""} onClick={() => setContentType("posts")}>Posts</button>
-        <button className={contentType === "movies" ? "active" : ""} onClick={() => setContentType("movies")}>Movies</button>
-      </div>
-
-      <div className="search-container">
-        <input
-          type="text"
-          placeholder={`Search ${contentType}...`}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="search-input"
-        />
-      </div>
-
-      <div className="view-mode-toggle">
-        <button className={viewMode === "grid" ? "active" : ""} onClick={() => setViewMode("grid")}>Grid</button>
-        <button className={viewMode === "list" ? "active" : ""} onClick={() => setViewMode("list")}>List</button>
-      </div>
-
-      <div className={`posts-container ${viewMode}`}>
-        {filteredPosts.map(post => (
-          <div key={post.id} className="post-card" onClick={() => setSelectedPost(post)}>
-            <img src={post.image || post.image_url || defaultImage} alt={post.title} className="post-image" />
-            {viewMode === "list" && (
-              <div className="post-caption">
-                <strong>{post.title}</strong>{post.genre ? ` (${post.year}) - ${post.genre}` : ""}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {selectedPost && (
-        <div className="post-modal" onClick={() => setSelectedPost(null)}>
-          <div className="post-modal-content" onClick={e => e.stopPropagation()}>
-            <span className="modal-close" onClick={() => setSelectedPost(null)}>&times;</span>
-            <img src={selectedPost.image || selectedPost.image_url || defaultImage} alt={selectedPost.title} />
-            <div className="modal-body">
-              <h3>{selectedPost.title}</h3>
-              {selectedPost.genre && <p>Genre: {selectedPost.genre} | Year: {selectedPost.year}</p>}
-              {selectedPost.content && <p>{selectedPost.content}</p>}
-              <div className="post-interactions">
-                <button onClick={() => handleLike(selectedPost.id)}>❤️ {selectedPost.likes || 0}</button>
-              </div>
-              <div className="post-comments">
-                {(selectedPost.comments || []).map((c, i) => <div key={i}>• {c}</div>)}
-              </div>
-              <input
-                type="text"
-                placeholder="Add comment..."
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleAddComment(selectedPost.id, e.target.value);
-                    e.target.value = "";
-                  }
-                }}
-              />
-            </div>
-          </div>
+      <div className="dashboard-container">
+        <div className="dashboard-header">
+          <h1>{contentType === "posts" ? "Posts" : "Movies"}</h1>
+          <button className="add-post-button" onClick={() => {
+            setAddModal(true); 
+            setNewItem(prev => ({ ...prev, type: contentType === "posts" ? "post" : "movie" }));
+          }}>
+            + Add {contentType === "posts" ? "Post" : "Movie"}
+          </button>
         </div>
-      )}
 
-      {addModal && (
-        <div className="post-modal" onClick={() => setAddModal(false)}>
-          <div className="post-modal-content" onClick={e => e.stopPropagation()}>
-            <span className="modal-close" onClick={() => setAddModal(false)}>&times;</span>
-            <div className="modal-body">
-              <h3>Add New {contentType === "posts" ? "Post" : "Movie"}</h3>
-              <input 
-                type="text" 
-                placeholder="Title *" 
-                value={newItem.title} 
-                onChange={(e) => setNewItem(prev => ({ ...prev, title: e.target.value }))} 
-              />
-              {contentType === "posts" && (
-                <textarea 
-                  placeholder="Content" 
-                  value={newItem.content} 
-                  onChange={(e) => setNewItem(prev => ({ ...prev, content: e.target.value }))}
-                  rows="4"
+        <div className="content-type-toggle">
+          <button className={contentType === "posts" ? "active" : ""} onClick={() => setContentType("posts")}>Posts</button>
+          <button className={contentType === "movies" ? "active" : ""} onClick={() => setContentType("movies")}>Movies</button>
+        </div>
+
+        <div className="search-container">
+          <input
+            type="text"
+            placeholder={`Search ${contentType}...`}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
+          />
+        </div>
+
+        <div className="view-mode-toggle">
+          <button className={viewMode === "grid" ? "active" : ""} onClick={() => setViewMode("grid")}>Grid</button>
+          <button className={viewMode === "list" ? "active" : ""} onClick={() => setViewMode("list")}>List</button>
+        </div>
+
+        <div className={`posts-container ${viewMode}`}>
+          {filteredPosts.map(post => (
+            <div key={post.id} className="post-card" onClick={() => setSelectedPost(post)}>
+              <img src={post.image || post.image_url || defaultImage} alt={post.title} className="post-image" />
+              {viewMode === "list" && (
+                <div className="post-caption">
+                  <strong>{post.title}</strong>{post.genre ? ` (${post.year}) - ${post.genre}` : ""}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {selectedPost && (
+          <div className="post-modal" onClick={() => setSelectedPost(null)}>
+            <div className="post-modal-content" onClick={e => e.stopPropagation()}>
+              <span className="modal-close" onClick={() => setSelectedPost(null)}>&times;</span>
+              <img src={selectedPost.image || selectedPost.image_url || defaultImage} alt={selectedPost.title} />
+              <div className="modal-body">
+                <h3>{selectedPost.title}</h3>
+                {selectedPost.genre && <p>Genre: {selectedPost.genre} | Year: {selectedPost.year}</p>}
+                {selectedPost.content && <p>{selectedPost.content}</p>}
+                <div className="post-interactions">
+                  <button onClick={() => handleLike(selectedPost.id)}>❤️ {selectedPost.likes || 0}</button>
+                </div>
+                <div className="post-comments">
+                  {(selectedPost.comments || []).map((c, i) => <div key={i}>• {c}</div>)}
+                </div>
+                <input
+                  type="text"
+                  placeholder="Add comment..."
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleAddComment(selectedPost.id, e.target.value);
+                      e.target.value = "";
+                    }
+                  }}
                 />
-              )}
-              {contentType === "movies" && (
-                <>
-                  <input 
-                    type="text" 
-                    placeholder="Genre" 
-                    value={newItem.genre} 
-                    onChange={(e) => setNewItem(prev => ({ ...prev, genre: e.target.value }))} 
-                  />
-                  <input 
-                    type="number" 
-                    placeholder="Year" 
-                    value={newItem.year} 
-                    onChange={(e) => setNewItem(prev => ({ ...prev, year: e.target.value }))} 
-                  />
-                </>
-              )}
-              <label className="add-image-label">
-                {newItem.image ? "Change Image" : "Select Image (Optional)"}
-                <input type="file" accept="image/*" onChange={handleImageChange} style={{ display: "none" }} />
-              </label>
-              {newItem.image && <img src={newItem.image} alt="Preview" className="image-preview" />}
-              <button className="add-post-button" onClick={handleAddItem}>
-                Add {contentType === "posts" ? "Post" : "Movie"}
-              </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {addModal && (
+          <div className="post-modal" onClick={() => setAddModal(false)}>
+            <div className="post-modal-content" onClick={e => e.stopPropagation()}>
+              <span className="modal-close" onClick={() => setAddModal(false)}>&times;</span>
+              <div className="modal-body">
+                <h3>Add New {contentType === "posts" ? "Post" : "Movie"}</h3>
+                <input 
+                  type="text" 
+                  placeholder="Title *" 
+                  value={newItem.title} 
+                  onChange={(e) => setNewItem(prev => ({ ...prev, title: e.target.value }))} 
+                />
+                {contentType === "posts" && (
+                  <textarea 
+                    placeholder="Content" 
+                    value={newItem.content} 
+                    onChange={(e) => setNewItem(prev => ({ ...prev, content: e.target.value }))}
+                    rows="4"
+                  />
+                )}
+                {contentType === "movies" && (
+                  <>
+                    <input 
+                      type="text" 
+                      placeholder="Genre" 
+                      value={newItem.genre} 
+                      onChange={(e) => setNewItem(prev => ({ ...prev, genre: e.target.value }))} 
+                    />
+                    <input 
+                      type="number" 
+                      placeholder="Year" 
+                      value={newItem.year} 
+                      onChange={(e) => setNewItem(prev => ({ ...prev, year: e.target.value }))} 
+                    />
+                  </>
+                )}
+                <label className="add-image-label">
+                  {newItem.image ? "Change Image" : "Select Image (Optional)"}
+                  <input type="file" accept="image/*" onChange={handleImageChange} style={{ display: "none" }} />
+                </label>
+                {newItem.image && <img src={newItem.image} alt="Preview" className="image-preview" />}
+                <button className="add-post-button" onClick={handleAddItem}>
+                  Add {contentType === "posts" ? "Post" : "Movie"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 

@@ -17,11 +17,17 @@ function Login() {
     e.preventDefault();
     try {
       const res = await axios.post("http://localhost:5000/api/auth/login", form);
+      
+      // ✅ ВИПРАВЛЕНО: Зберігаємо і токен, і дані користувача
       localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user)); // ← ДОДАНО!
+      
+      console.log("✅ Login successful:", res.data.user);
+      
       alert(`Welcome, ${res.data.user.first_name}!`);
       navigate("/dashboard");
     } catch (err) {
-      console.error(err.response?.data);
+      console.error("❌ Login error:", err.response?.data);
       alert(err.response?.data.message || "Login failed");
     }
   };
@@ -34,19 +40,31 @@ function Login() {
         <form onSubmit={handleSubmit}>
           <div className="input-group">
             <label htmlFor="usernameOrEmail">EMAIL or USERNAME</label>
-            <input type="text" id="usernameOrEmail" value={form.usernameOrEmail} onChange={handleChange} />
+            <input 
+              type="text" 
+              id="usernameOrEmail" 
+              value={form.usernameOrEmail} 
+              onChange={handleChange}
+              required
+            />
           </div>
 
           <div className="input-group">
             <label htmlFor="password">PASSWORD</label>
-            <input type="password" id="password" value={form.password} onChange={handleChange} />
+            <input 
+              type="password" 
+              id="password" 
+              value={form.password} 
+              onChange={handleChange}
+              required
+            />
           </div>
 
           <button type="submit" className="submit-btn">LOGIN</button>
         </form>
 
         <p style={{ marginTop: "10px" }}>
-          Don’t have an account? <Link to="/register">Register</Link>
+          Don't have an account? <Link to="/register">Register</Link>
         </p>
       </div>
       <img src={AvaImage} alt="Avatar" className="deco-image image-bottom-right" />
