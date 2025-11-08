@@ -1,18 +1,38 @@
 :root {
-  --bg-color: #fcf8ee;
-  --text-color: #60574c; /* головний темний колір */
-  --text-light: #a9988b;
-  --box-bg: #ffffff;
-  --accent-color: #60574c; /* кнопки Edit і активні */
-  --hover-gradient: linear-gradient(135deg, #f5f3ec, #eae3d4);
-  --card-gradient: linear-gradient(135deg, #fff, #f7f3e8);
+  --bg-color: #0A192F;         
+  --box-bg: #112240;           
+  --surface-hover: #173155;    
+  
+  --text-color: #E2E8F0;     
+  --text-light: #A0AEC0;     
+
+  --accent-gradient: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+  --accent-hover-gradient: linear-gradient(135deg, #5A6EE4 0%, #6A4194 100%);
+  
+  --accent-text: #FFFFFF;    
+
+  --border-color: #2D3748;    
+  --shadow-color: rgba(0, 0, 0, 0.4);
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  background-image: radial-gradient(at 20% 70%, rgba(102,126,234,0.15) 0, transparent 50%),
+                    radial-gradient(at 80% 30%, rgba(118,75,162,0.15) 0, transparent 50%);
+  background-attachment: fixed; 
+  background-size: 80% 80%, 60% 60%; 
+  margin: 0;
+  padding: 0;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .dashboard-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  font-family: 'Montserrat', sans-serif;
+  position: relative; 
+  z-index: 1; 
 }
 
 .dashboard-header {
@@ -31,24 +51,23 @@
 }
 
 .add-post-button {
-  background: var(--hover-gradient);
+  background: var(--accent-gradient); 
+  color: var(--accent-text);
   border: none;
   border-radius: 25px;
   padding: 10px 20px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+  box-shadow: 0 6px 15px var(--shadow-color); 
   transition: all 0.3s ease;
 }
 
 .add-post-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-  background: linear-gradient(135deg, #eae3d4, #f5f3ec);
-  color: var(--accent-color);
+  box-shadow: 0 8px 20px var(--shadow-color);
+  background: var(--accent-hover-gradient); 
 }
 
-/* View Toggle */
 .view-mode-toggle {
   display: flex;
   justify-content: flex-end;
@@ -59,16 +78,26 @@
 .view-mode-toggle button {
   padding: 8px 15px;
   border-radius: 20px;
-  border: none;
+  border: 1px solid var(--border-color);
   font-weight: 600;
   cursor: pointer;
-  background: var(--hover-gradient);
-  transition: all 0.3s ease;
+  background: var(--box-bg); 
+  color: var(--text-light);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+  transition: all 0.2s ease;
+}
+
+.view-mode-toggle button:hover {
+  background: var(--surface-hover);
+  color: var(--text-color);
+  border-color: var(--text-light);
 }
 
 .view-mode-toggle button.active {
-  background: var(--accent-color);
-  color: #fff;
+  background: var(--accent-gradient); 
+  color: var(--accent-text);
+  border-color: transparent; 
+  box-shadow: 0 4px 10px rgba(102,126,234,0.4); 
 }
 
 .content-type-toggle {
@@ -81,24 +110,28 @@
 .content-type-toggle button {
   padding: 8px 18px;
   border-radius: 20px;
-  border: none;
+  border: 1px solid var(--border-color);
   font-weight: 600;
   cursor: pointer;
-  background-color: #fdf6ec; /* світлий фон */
-  color: #60574c; /* темний текст */
-  transition: all 0.3s ease;
+  background-color: var(--box-bg);
+  color: var(--text-light);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
 }
 
 .content-type-toggle button:hover {
-  background-color: #f7eedc; /* трохи темніше при hover */
+  background-color: var(--surface-hover);
+  color: var(--text-color);
+  border-color: var(--text-light);
 }
 
 .content-type-toggle button.active {
-  background-color: #60574c; /* темна активна кнопка */
-  color: #fff; /* білий текст */
+  background-color: var(--accent-gradient);
+  color: var(--accent-text);
+  border-color: transparent;
+  box-shadow: 0 4px 10px rgba(102,126,234,0.4);
 }
 
-/* Posts Grid/List */
 .posts-container.grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -112,20 +145,21 @@
 }
 
 .post-card {
-  background: var(--card-gradient);
+  background: var(--box-bg);
   border-radius: 20px;
-  box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 20px var(--shadow-color); 
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
 }
 
 .post-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 12px 25px rgba(0,0,0,0.12);
+  box-shadow: 0 12px 25px var(--shadow-color); 
+  background-color: var(--surface-hover);
 }
 
-/* Square Images */
 .posts-container.grid .post-card {
   aspect-ratio: 1 / 1;
 }
@@ -135,7 +169,8 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  border-radius: 20px 20px 0 0;
+  border-radius: 0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .posts-container.list .post-card {
@@ -146,12 +181,13 @@
 .posts-container.list .post-card img.post-image {
   width: 130px;
   height: 100%;
-  border-radius: 15px;
+  border-radius: 0;
+  border-right: 1px solid var(--border-color);
   object-fit: cover;
 }
 
 .post-card .post-caption {
-  padding: 10px;
+  padding: 15px;
   font-weight: 600;
   flex: 1;
   display: flex;
@@ -159,14 +195,14 @@
   color: var(--text-color);
 }
 
-/* Modal */
 .post-modal {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.6);
+  background: rgba(10, 25, 47, 0.7); 
+  backdrop-filter: blur(10px); 
   display: flex;
   justify-content: center;
   align-items: center;
@@ -174,7 +210,7 @@
 }
 
 .post-modal-content {
-  background: var(--card-gradient);
+  background: var(--box-bg);
   border-radius: 20px;
   width: 90%;
   max-width: 600px;
@@ -184,13 +220,14 @@
   display: flex;
   flex-direction: column;
   padding: 20px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  box-shadow: 0 12px 40px var(--shadow-color); 
+  border: 1px solid var(--border-color);
 }
 
 .post-modal img {
   width: 100%;
   object-fit: cover;
-  border-radius: 20px 20px 0 0;
+  border-radius: 15px;
 }
 
 .post-modal .modal-body {
@@ -199,15 +236,19 @@
 
 .post-modal .modal-close {
   position: absolute;
-  top: 10px;
+  top: 15px;
   right: 15px;
   font-size: 1.5rem;
   font-weight: bold;
   cursor: pointer;
-  color: var(--accent-color);
+  color: var(--text-light);
+  transition: color 0.2s ease;
 }
 
-/* Likes & Comments */
+.post-modal .modal-close:hover {
+  color: var(--text-color); 
+}
+
 .post-interactions {
   display: flex;
   justify-content: space-between;
@@ -219,7 +260,12 @@
   background: none;
   font-weight: 600;
   cursor: pointer;
-  color: var(--accent-color);
+  color: #667EEA; 
+  transition: color 0.2s ease;
+}
+
+.post-interactions button:hover {
+  color: #764BA2;
 }
 
 .post-comments {
@@ -233,25 +279,37 @@
   margin-top: 10px;
   padding: 10px 12px;
   border-radius: 20px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-color); 
+  color: var(--text-color);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Add Image */
+.post-comments input:focus {
+  outline: none;
+  border-color: #667EEA; 
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+}
+
 .add-image-label {
   display: inline-block;
   margin-top: 10px;
   padding: 10px 16px;
-  background: var(--hover-gradient);
+  background: var(--box-bg);
+  color: var(--text-light);
   border-radius: 20px;
+  border: 1px solid var(--border-color);
   cursor: pointer;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
 }
 
 .add-image-label:hover {
   transform: translateY(-2px);
-  background: linear-gradient(135deg, #eae3d4, #f5f3ec);
+  background: var(--surface-hover);
+  color: var(--text-color);
+  border-color: var(--text-light);
 }
 
 .image-preview {
@@ -260,6 +318,7 @@
   max-height: 300px;
   object-fit: cover;
   border-radius: 15px;
+  border: 1px solid var(--border-color);
 }
 
 /* Search */
@@ -275,12 +334,13 @@
   max-width: 400px;
   padding: 12px 15px;
   border-radius: 25px;
-  border: 2px solid #ddd;
+  border: 1px solid var(--border-color);
   font-size: 1rem;
   font-family: 'Montserrat', sans-serif;
   transition: all 0.3s ease;
-  background-color: var(--box-bg);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  background-color: var(--box-bg); 
+  color: var(--text-color);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2); 
 }
 
 .search-input::placeholder {
@@ -290,6 +350,6 @@
 
 .search-input:focus {
   outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+  border-color: #667EEA; 
+  box-shadow: 0 0 10px 2px rgba(102, 126, 234, 0.4); 
 }
