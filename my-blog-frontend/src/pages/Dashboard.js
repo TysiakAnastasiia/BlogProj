@@ -20,6 +20,8 @@ function Dashboard() {
   const [searchQuery, setSearchQuery] = useState(""); 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(""); 
 
+  const getItemType = () => contentType === "posts" ? "post" : "movie";
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     const userData = JSON.parse(localStorage.getItem('user'));
@@ -215,11 +217,12 @@ function Dashboard() {
 
     try {
       if (hasLiked) {
-        await api.removeLike(id, contentType, user.token);
+        await api.removeLike(id, getItemType(), user.token);
       } else {
-        await api.addLike({ post_id: id, item_type: contentType }, user.token); 
+        await api.addLike({ post_id: id, item_type: getItemType() }, user.token); 
       }
     } catch (err) {
+      console.error("Failed to update like:", err);
       alert("Failed to update like. Please try again.");
       setLikedByMe(originalLikedSet); 
       setPosts(originalPosts); 
@@ -240,7 +243,8 @@ function Dashboard() {
       const commentData = {
         post_id: id,
         content: commentText,
-        item_type: contentType 
+        // FIX: Pass singular form "post" or "movie" instead of "posts" or "movies"
+        item_type: getItemType()
       };
 
       const newComment = await api.addComment(commentData, user.token); 

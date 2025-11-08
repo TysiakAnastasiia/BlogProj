@@ -106,8 +106,12 @@ export const deleteMovie = async (id, token) => {
 
 
 export const addLike = async (likeData, token) => {
+  console.log('API addLike called with:', { likeData, token: token ? 'exists' : 'missing' });
   const res = await axios.post(`${API_URL}/likes`, likeData, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { 
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
   });
   return res.data;
 };

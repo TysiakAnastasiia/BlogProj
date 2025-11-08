@@ -12,10 +12,14 @@ router.post('/', verifyToken, async (req, res) => {
     const { post_id, item_type } = req.body;
     const user_id = req.user.id;
 
+    console.log('Received like request:', { post_id, item_type, user_id }); 
+
     const [existingLikes] = await pool.query(
       'SELECT * FROM likes WHERE post_id = ? AND user_id = ? AND item_type = ?',
       [post_id, user_id, item_type]
     );
+
+    console.log('Existing likes found:', existingLikes.length); 
 
     if (existingLikes.length > 0) {
       return res.status(400).json({ message: 'Item already liked' });
@@ -29,11 +33,11 @@ router.post('/', verifyToken, async (req, res) => {
     res.status(201).json({ message: 'Like added' });
 
   } catch (err) {
-    console.error('Error adding like:', err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error adding like:', err); 
+    console.error('Full error:', err.message, err.sqlMessage); 
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
-
 // @route   DELETE api/likes/:itemType/:postId
 // @desc    Видалити лайк (для post або movie)
 // @access  Private
