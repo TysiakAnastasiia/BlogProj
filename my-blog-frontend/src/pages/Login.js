@@ -5,9 +5,45 @@ import WedImage from "../styles/wed.jpg";
 import AvaImage from "../styles/ava.jpg";
 import axios from "axios";
 
+const CustomAlert = ({ message, type, onClose }) => {
+  const [show, setShow] = useState(false);
+
+  React.useEffect(() => {
+    if (message) {
+      setShow(true);
+      const timer = setTimeout(() => {
+        setShow(false);
+        setTimeout(onClose, 400); 
+      }, 3000); 
+      return () => clearTimeout(timer);
+    }
+  }, [message, onClose]);
+
+  if (!message) return null;
+
+  return (
+    <div className={`app-alert ${type} ${show ? 'show' : ''}`}>
+      {message}
+    </div>
+  );
+};
+
+
 function Login() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ usernameOrEmail: "", password: "" });
+  
+  // НОВІ СТАНИ
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertType, setAlertType] = useState('success');
+  
+  const showAlert = (message, type = 'success') => {
+    setAlertType(type);
+    setAlertMessage(message);
+  };
+  
+  const closeAlert = () => setAlertMessage(null);
+
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.id]: e.target.value });
@@ -18,22 +54,22 @@ function Login() {
     try {
       const res = await axios.post("http://localhost:5000/api/auth/login", form);
       
-      // ✅ ВИПРАВЛЕНО: Зберігаємо і токен, і дані користувача
       localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user)); // ← ДОДАНО!
+      localStorage.setItem("user", JSON.stringify(res.data.user)); 
       
       console.log("✅ Login successful:", res.data.user);
       
-      alert(`Welcome, ${res.data.user.first_name}!`);
+      showAlert(`Welcome, ${res.data.user.first_name}!`, 'success'); 
       navigate("/dashboard");
     } catch (err) {
       console.error("❌ Login error:", err.response?.data);
-      alert(err.response?.data.message || "Login failed");
+      showAlert(err.response?.data.message || "Login failed", 'error'); 
     }
   };
 
   return (
     <div className="container">
+      <CustomAlert message={alertMessage} type={alertType} onClose={closeAlert} /> 
       <img src={WedImage} alt="Wedding" className="deco-image image-top-left" />
       <div className="form-wrapper">
         <h1 className="title">LOGIN</h1>

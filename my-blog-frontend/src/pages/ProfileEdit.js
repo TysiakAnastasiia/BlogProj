@@ -1,13 +1,48 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react"; 
 import { useNavigate } from "react-router-dom";
 import "../styles/ProfileEdit.css";
 import { getProfile, updateProfile } from "../api";
+
+const CustomAlert = ({ message, type, onClose }) => {
+  const [show, setShow] = useState(false);
+
+  React.useEffect(() => {
+    if (message) {
+      setShow(true);
+      const timer = setTimeout(() => {
+        setShow(false);
+        setTimeout(onClose, 400); 
+      }, 3000); 
+      return () => clearTimeout(timer);
+    }
+  }, [message, onClose]);
+
+  if (!message) return null;
+
+  return (
+    <div className={`app-alert ${type} ${show ? 'show' : ''}`}>
+      {message}
+    </div>
+  );
+};
+
 
 function ProfileEdit() {
   const navigate = useNavigate();
   const [profileData, setProfileData] = useState(null);
   const [profilePic, setProfilePic] = useState(null);
   const [loading, setLoading] = useState(false);
+  
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertType, setAlertType] = useState('success');
+
+  const showAlert = useCallback((message, type = 'success') => {
+    setAlertType(type);
+    setAlertMessage(message);
+  }, []); 
+  
+  const closeAlert = () => setAlertMessage(null);
+
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -18,20 +53,28 @@ function ProfileEdit() {
         const data = await getProfile(token);
         console.log("📥 Profile loaded:", data);
 
-        // Форматуємо дату
         const formattedDate = data.birth_date
           ? new Date(data.birth_date).toISOString().split("T")[0]
           : "";
-
-        setProfileData({ ...data, birth_date: formattedDate });
+        
+        setProfileData({ 
+            ...data, 
+            birth_date: formattedDate || "", 
+            first_name: data.first_name || "",
+            last_name: data.last_name || "",
+            username: data.username || "",
+            email: data.email || "",
+            phone: data.phone || "",
+        });
         setProfilePic(data.avatar_url || null);
       } catch (err) {
         console.error("❌ Помилка завантаження профілю:", err);
-        alert("Не вдалося завантажити профіль");
+        showAlert("Не вдалося завантажити профіль", 'error'); 
       }
     };
-    fetchProfile();
-  }, [navigate]);
+    
+    fetchProfile(); 
+  }, [navigate, showAlert]); 
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -62,11 +105,13 @@ function ProfileEdit() {
       
       console.log("✅ Profile updated:", response);
       
-      alert("Профіль успішно оновлено!");
-      navigate("/profile");
+      showAlert("Профіль успішно оновлено!", 'success'); 
+      
+      setTimeout(() => navigate("/profile"), 1000); 
+      
     } catch (err) {
       console.error("❌ Помилка оновлення профілю:", err);
-      alert(`Помилка: ${err.response?.data?.message || err.message}`);
+      showAlert(`Помилка: ${err.response?.data?.message || err.message}`, 'error'); 
     } finally {
       setLoading(false);
     }
@@ -76,6 +121,7 @@ function ProfileEdit() {
 
   return (
     <div className="profile-edit-page">
+      <CustomAlert message={alertMessage} type={alertType} onClose={closeAlert} /> 
       <header className="profile-header">
         <h1>EDIT PROFILE</h1>
         <button className="back-button" onClick={() => navigate("/profile")}>
@@ -109,8 +155,8 @@ function ProfileEdit() {
             <input
               type="text"
               name="first_name"
-              value={profileData.first_name || ""}
-              onChange={handleChange}
+              value={profileData.first_name} 
+              onChange={handleChange} 
               placeholder="Enter first name"
             />
           </div>
@@ -120,7 +166,7 @@ function ProfileEdit() {
             <input
               type="text"
               name="last_name"
-              value={profileData.last_name || ""}
+              value={profileData.last_name}
               onChange={handleChange}
               placeholder="Enter last name"
             />
@@ -131,7 +177,7 @@ function ProfileEdit() {
             <input
               type="text"
               name="username"
-              value={profileData.username || ""}
+              value={profileData.username}
               onChange={handleChange}
               placeholder="Enter username"
             />
@@ -142,7 +188,7 @@ function ProfileEdit() {
             <input
               type="date"
               name="birth_date"
-              value={profileData.birth_date || ""}
+              value={profileData.birth_date}
               onChange={handleChange}
             />
           </div>
@@ -152,7 +198,7 @@ function ProfileEdit() {
             <input
               type="email"
               name="email"
-              value={profileData.email || ""}
+              value={profileData.email}
               onChange={handleChange}
               placeholder="Enter email"
             />
@@ -163,7 +209,7 @@ function ProfileEdit() {
             <input
               type="text"
               name="phone"
-              value={profileData.phone || ""}
+              value={profileData.phone}
               onChange={handleChange}
               placeholder="Enter phone number"
             />

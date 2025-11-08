@@ -4,6 +4,30 @@ import "../styles/Profile.css";
 import Header from "./Header";
 import axios from "axios";
 
+const CustomAlert = ({ message, type, onClose }) => {
+  const [show, setShow] = useState(false);
+
+  React.useEffect(() => {
+    if (message) {
+      setShow(true);
+      const timer = setTimeout(() => {
+        setShow(false);
+        setTimeout(onClose, 400); 
+      }, 3000); 
+      return () => clearTimeout(timer);
+    }
+  }, [message, onClose]);
+
+  if (!message) return null;
+
+  return (
+    <div className={`app-alert ${type} ${show ? 'show' : ''}`}>
+      {message}
+    </div>
+  );
+};
+
+
 function OtherProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
@@ -11,6 +35,18 @@ function OtherProfilePage() {
   const [posts, setPosts] = useState([]);
   const [viewMode, setViewMode] = useState("grid");
   const [following, setFollowing] = useState(false);
+  
+  // НОВІ СТАНИ
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertType, setAlertType] = useState('success');
+
+  const showAlert = (message, type = 'success') => {
+    setAlertType(type);
+    setAlertMessage(message);
+  };
+  
+  const closeAlert = () => setAlertMessage(null);
+
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -19,7 +55,6 @@ function OtherProfilePage() {
         const token = localStorage.getItem("token");
         if (!token) return navigate("/login");
 
-        // Отримуємо свій профіль
         const meRes = await axios.get(`http://localhost:5000/api/users/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -28,7 +63,6 @@ function OtherProfilePage() {
           return navigate("/profile");
         }
 
-        // Інакше завантажуємо дані іншого користувача
         const res = await axios.get(`http://localhost:5000/api/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -41,13 +75,13 @@ function OtherProfilePage() {
         setFollowing(res.data.isFollowing || false);
       } catch (err) {
         console.error("Помилка при завантаженні користувача:", err);
-        alert("User not found");
+        showAlert("User not found", 'error'); 
         navigate("/dashboard");
       }
     };
 
     fetchUser();
-  }, [userId, navigate]);
+  }, [userId, navigate, showAlert]);
 
   const handleFollowToggle = async () => {
     try {
@@ -60,23 +94,24 @@ function OtherProfilePage() {
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        showAlert(`Unfollowed ${user.username}`, 'success'); 
       } else {
         await axios.post(
           `http://localhost:5000/api/users/${userId}/follow`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        showAlert(`Following ${user.username}`, 'success'); 
       }
 
       setFollowing(!following);
-      // Оновлюємо лічильник followers локально
       setUser(prev => ({
         ...prev,
         followers: prev.followers + (following ? -1 : 1),
       }));
     } catch (err) {
       console.error("Помилка при підписці/відписці:", err);
-      alert("Failed to update follow status");
+      showAlert("Failed to update follow status", 'error'); 
     }
   };
 
@@ -85,6 +120,7 @@ function OtherProfilePage() {
 
   return (
     <div className="profile-page">
+      <CustomAlert message={alertMessage} type={alertType} onClose={closeAlert} /> 
       <Header />
 
       <header className="profile-header">

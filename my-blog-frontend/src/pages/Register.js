@@ -5,8 +5,42 @@ import WedImage from "../styles/wed.jpg";
 import AvaImage from "../styles/ava.jpg";
 import axios from "axios";
 
+const CustomAlert = ({ message, type, onClose }) => {
+  const [show, setShow] = useState(false);
+
+  React.useEffect(() => {
+    if (message) {
+      setShow(true);
+      const timer = setTimeout(() => {
+        setShow(false);
+        setTimeout(onClose, 400); 
+      }, 3000); 
+      return () => clearTimeout(timer);
+    }
+  }, [message, onClose]);
+
+  if (!message) return null;
+
+  return (
+    <div className={`app-alert ${type} ${show ? 'show' : ''}`}>
+      {message}
+    </div>
+  );
+};
+
 function Register() {
   const navigate = useNavigate();
+  // НОВІ СТАНИ
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertType, setAlertType] = useState('success');
+  
+  const showAlert = (message, type = 'success') => {
+    setAlertType(type);
+    setAlertMessage(message);
+  };
+  
+  const closeAlert = () => setAlertMessage(null);
+
 
   const [form, setForm] = useState({
     first_name: "",
@@ -25,17 +59,18 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/register", form);
-      alert("User created successfully!");
+      await axios.post("http://localhost:5000/api/auth/register", form);
+      showAlert("User created successfully!", 'success'); 
       navigate("/login");
     } catch (err) {
       console.error(err.response?.data);
-      alert(err.response?.data.message || "Registration failed");
+      showAlert(err.response?.data.message || "Registration failed", 'error'); 
     }
   };
 
   return (
     <div className="container">
+      <CustomAlert message={alertMessage} type={alertType} onClose={closeAlert} /> 
       <img src={WedImage} alt="Wedding" className="deco-image image-top-left" />
       <div className="form-wrapper">
         <h1 className="title">REGISTER</h1>

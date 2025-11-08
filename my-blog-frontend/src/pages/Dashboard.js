@@ -1,9 +1,49 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "../styles/Dashboard.css";
-import api from "../api"; 
 import defaultImage from "../styles/def.png"; 
+import api from "../api"; 
 import Header from "./Header";
 import "../styles/Header.css";
+
+
+// --- НОВИЙ КОМПОНЕНТ ДЛЯ ALERT/TOAST ---
+const CustomAlert = ({ message, type, onClose }) => {
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    if (message) {
+      setShow(true);
+      const timer = setTimeout(() => {
+        setShow(false);
+        // Викликаємо onClose, щоб очистити стан у батьківському компоненті
+        setTimeout(onClose, 400); 
+      }, 3000); // Показуємо 3 секунди
+      return () => clearTimeout(timer);
+    }
+  }, [message, onClose]);
+
+  if (!message) return null;
+
+  return (
+    <div className={`app-alert ${type} ${show ? 'show' : ''}`}>
+      {message}
+    </div>
+  );
+};
+
+// --- НОВИЙ КОМПОНЕНТ ДЛЯ CONFIRM ---
+const ConfirmModal = ({ message, onConfirm, onCancel }) => (
+  <div className="confirm-modal-overlay">
+    <div className="confirm-modal-content" onClick={e => e.stopPropagation()}>
+      <h4>{message}</h4>
+      <div className="confirm-actions">
+        <button className="btn-cancel" onClick={onCancel}>Cancel</button>
+        <button className="btn-confirm" onClick={onConfirm}>Confirm</button>
+      </div>
+    </div>
+  </div>
+);
+
 
 function Dashboard() {
   const [posts, setPosts] = useState([]);
@@ -19,8 +59,20 @@ function Dashboard() {
 
   const [searchQuery, setSearchQuery] = useState(""); 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(""); 
+  
+  // НОВІ СТАНИ для Alert/Confirm
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertType, setAlertType] = useState('success');
+  const [confirmAction, setConfirmAction] = useState(null); // { message, handler, id, itemType/commentId }
+
 
   const getItemType = () => contentType === "posts" ? "post" : "movie";
+  
+  // Функція для показу Alert
+  const showAlert = useCallback((message, type = 'success') => {
+    setAlertType(type);
+    setAlertMessage(message);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -47,9 +99,7 @@ function Dashboard() {
       
       try {
         const apiFunction = contentType === "posts" ? api.getPosts : api.getMovies;
-        
         const res = await apiFunction(user.id, debouncedSearchQuery); 
-
         setPosts(res);
         
         const initialLikes = new Set(
@@ -61,11 +111,12 @@ function Dashboard() {
 
       } catch (err) {
         console.error("Error fetching data:", err);
+        showAlert(`Error loading ${contentType}: ${err.message}`, 'error');
       }
     };
     
     fetchData();
-  }, [contentType, user, debouncedSearchQuery]);
+  }, [contentType, user, debouncedSearchQuery, showAlert]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -87,11 +138,11 @@ function Dashboard() {
 
   const handleSaveItem = async () => {
     if (!itemInEditor.title) {
-      alert("Title is required!");
+      showAlert("Title is required!", 'error');
       return;
     }
     if (!user || !user.token) { 
-      alert("You must be logged in!");
+      showAlert("You must be logged in!", 'error');
       return;
     }
 
@@ -113,8 +164,8 @@ function Dashboard() {
         title: itemInEditor.title,
         genre: itemInEditor.genre || "",
         year: itemInEditor.year || null,
-        image: itemInEditor.image || "", 
-        user_id: user.id 
+        image_url: itemInEditor.image || itemInEditor.image_url || "", 
+        created_by: user.id 
       };
       apiFunction = isEditing ? api.updateMovie : api.createMovie; 
     }
@@ -124,10 +175,10 @@ function Dashboard() {
         await apiFunction(updateId, itemData, user.token);
         
         setPosts(posts.map(p => 
-          p.id === updateId ? { ...p, ...itemData, image: itemData.image } : p
+          p.id === updateId ? { ...p, ...itemData, image_url: itemData.image_url, image: itemData.image } : p
         ));
         
-        alert("Item updated successfully!");
+        showAlert("Item updated successfully!");
         
       } else {
         const res = await apiFunction(itemData, user.token); 
@@ -135,7 +186,7 @@ function Dashboard() {
         
         setPosts([{ ...itemData, id: newItemId, created_at: new Date(), likes: 0, comments: [], likedByMe: false }, ...posts]);
         
-        alert("Item created successfully!");
+        showAlert("Item created successfully!");
       }
 
       resetEditor();
@@ -143,7 +194,7 @@ function Dashboard() {
 
     } catch (err) {
       console.error("Error saving item:", err);
-      alert(`Error saving: ${err.response?.data?.message || err.message}`);
+      showAlert(`Error saving: ${err.response?.data?.message || err.message}`, 'error');
     }
   };
 
@@ -157,38 +208,48 @@ function Dashboard() {
     setOpenOptionsPostId(null);
     setIsModalOptionsOpen(false);
   };
-
-  const handleDeleteClick = async (postId, postType) => {
-    if (!window.confirm("Are you sure you want to delete this item?")) return;
+  
+  // ЗМІНЕНО: Ініціатор підтвердження видалення поста
+  const initiatePostDelete = (postId, postType) => {
+    const itemLabel = postType === 'posts' ? 'post' : 'movie';
+    setConfirmAction({
+      message: `Are you sure you want to delete this ${itemLabel}?`,
+      handler: () => executeDeletePost(postId, postType),
+      id: postId
+    });
+    setOpenOptionsPostId(null);
+    setIsModalOptionsOpen(false);
+  };
+  
+  // ЗМІНЕНО: Виконання видалення поста
+  const executeDeletePost = async (postId, postType) => {
     if (!user || !user.token) { 
-      alert("You must be logged in!");
+      showAlert("You must be logged in!", 'error');
       return;
     }
 
-    const type = postType || (contentType === "posts" ? "posts" : "movies");
-    const deleteFunction = type === 'posts' ? api.deletePost : api.deleteMovie;
+    const deleteFunction = postType === 'posts' ? api.deletePost : api.deleteMovie;
     
     try {
         await deleteFunction(postId, user.token);
-        
         setPosts(posts.filter(p => p.id !== postId));
         
         if (selectedPost && selectedPost.id === postId) {
             setSelectedPost(null);
         }
+        showAlert("Item deleted successfully!");
         
     } catch (err) {
         console.error("Error deleting item:", err);
-        alert(`Error deleting: ${err.response?.data?.message || err.message}`);
+        showAlert(`Error deleting: ${err.response?.data?.message || err.message}`, 'error');
     }
-    
-    setOpenOptionsPostId(null);
-    setIsModalOptionsOpen(false);
+    setConfirmAction(null); // Закриваємо модалку підтвердження
   };
+
 
   const handleLike = async (id) => {
     if (!user || !user.token) {
-      alert("You must be logged in to like posts!");
+      showAlert("You must be logged in to like posts!", 'error');
       return;
     }
 
@@ -223,7 +284,9 @@ function Dashboard() {
       }
     } catch (err) {
       console.error("Failed to update like:", err);
-      alert("Failed to update like. Please try again.");
+      showAlert("Failed to update like. Please try again.", 'error');
+      
+      // Відкат
       setLikedByMe(originalLikedSet); 
       setPosts(originalPosts); 
        if (selectedPost && selectedPost.id === id) {
@@ -235,7 +298,7 @@ function Dashboard() {
   const handleAddComment = async (id, commentText) => {
     if (!commentText) return;
     if (!user || !user.token) { 
-      alert("You must be logged in to comment!");
+      showAlert("You must be logged in to comment!", 'error');
       return;
     }
 
@@ -243,7 +306,6 @@ function Dashboard() {
       const commentData = {
         post_id: id,
         content: commentText,
-        // FIX: Pass singular form "post" or "movie" instead of "posts" or "movies"
         item_type: getItemType()
       };
 
@@ -262,16 +324,25 @@ function Dashboard() {
 
     } catch (err) {
       console.error("Error adding comment:", err);
-      alert(`Error adding comment: ${err.response?.data?.message || err.message}`);
+      showAlert(`Error adding comment: ${err.response?.data?.message || err.message}`, 'error');
     }
   };
+  
+  // ЗМІНЕНО: Ініціатор підтвердження видалення коментаря
+  const initiateCommentDelete = (commentId) => {
+    setConfirmAction({
+      message: "Are you sure you want to delete this comment?",
+      handler: () => executeDeleteComment(commentId),
+      id: commentId
+    });
+  };
 
-  const handleDeleteComment = async (commentId) => {
+  // ЗМІНЕНО: Виконання видалення коментаря
+  const executeDeleteComment = async (commentId) => {
     if (!user || !user.token) {
-      alert("You must be logged in!");
+      showAlert("You must be logged in!", 'error');
       return;
     }
-    if (!window.confirm("Delete this comment?")) return;
 
     try {
       await api.removeComment(commentId, user.token);
@@ -286,11 +357,13 @@ function Dashboard() {
         ...prev,
         comments: updatedComments
       }));
+      showAlert("Comment deleted successfully!");
 
     } catch (err) {
       console.error("Error deleting comment:", err);
-      alert(`Error deleting comment: ${err.response?.data?.message || err.message}`);
+      showAlert(`Error deleting comment: ${err.response?.data?.message || err.message}`, 'error');
     }
+    setConfirmAction(null); // Закриваємо модалку підтвердження
   };
 
 
@@ -306,6 +379,18 @@ function Dashboard() {
   return (
     <>
       <Header />
+      
+      {/* 1. ДОДАНО: Alert/Toast компонент */}
+      <CustomAlert message={alertMessage} type={alertType} onClose={() => setAlertMessage(null)} />
+
+      {/* 2. ДОДАНО: Confirm Modal */}
+      {confirmAction && (
+        <ConfirmModal 
+          message={confirmAction.message}
+          onConfirm={() => confirmAction.handler()}
+          onCancel={() => setConfirmAction(null)}
+        />
+      )}
 
       <div className="dashboard-container">
         <div className="dashboard-header">
@@ -313,7 +398,7 @@ function Dashboard() {
           <button className="add-post-button" onClick={() => {
             resetEditor();
             setEditModal(true);
-            setItemInEditor(prev => ({ ...prev, type: contentType === "posts" ? "post" : "movie" }));
+            setItemInEditor(prev => ({ ...prev, type: getItemType() }));
           }}>
             + Add {contentType === "posts" ? "Post" : "Movie"}
           </button>
@@ -354,7 +439,10 @@ function Dashboard() {
                 <div className="options-dropdown" onClick={(e) => e.stopPropagation()}>
                   <button onClick={() => handleEditClick(post)}>Edit</button>
                   <button 
-                    onClick={() => handleDeleteClick(post.id, post.genre ? "movies" : "posts")} 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      initiatePostDelete(post.id, post.genre ? "movies" : "posts"); // ЗМІНЕНО
+                    }} 
                     className="delete"
                   >
                     Delete
@@ -389,7 +477,7 @@ function Dashboard() {
                   <div className="options-dropdown" onClick={(e) => e.stopPropagation()}>
                     <button onClick={() => handleEditClick(selectedPost)}>Edit</button>
                     <button 
-                      onClick={() => handleDeleteClick(selectedPost.id, selectedPost.genre ? "movies" : "posts")} 
+                      onClick={() => initiatePostDelete(selectedPost.id, selectedPost.genre ? "movies" : "posts")} // ЗМІНЕНО
                       className="delete"
                     >
                       Delete
@@ -431,7 +519,7 @@ function Dashboard() {
                         {user && user.id === comment.author_id && (
                           <button 
                             className="comment-delete-btn"
-                            onClick={() => handleDeleteComment(comment.id)}
+                            onClick={() => initiateCommentDelete(comment.id)} // ЗМІНЕНО
                           >
                             &times;
                           </button>

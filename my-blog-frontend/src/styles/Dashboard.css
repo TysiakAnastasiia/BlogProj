@@ -563,3 +563,146 @@ img.post-modal-image {
   border-bottom: 1px solid var(--border-color);
   padding-bottom: 10px;
 }
+/* --- СУЧАСНІ СТИЛІ ДЛЯ СПЛИТАЮЧИХ ПОВІДОМЛЕНЬ (TOAST/ALERT) --- */
+
+.app-alert {
+  position: fixed;
+  top: 25px;
+  right: 25px;
+  padding: 14px 22px;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4); 
+  font-weight: 500;
+  font-size: 0.95rem;
+  z-index: 3000;
+  max-width: 320px;
+  opacity: 0;
+  transform: translateY(-30px);
+  transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* Для плавнішого вигляду використовуємо фон підсвітки */
+  background-color: var(--surface-hover); 
+}
+
+.app-alert.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.app-alert.success {
+  /* НОВИЙ СТИЛЬ: Синій акцент з м'яким світінням */
+  background-color: #213550; /* Глибокий синьо-сірий */
+  color: #87CEEB; /* Небесно-блакитний текст */
+  border: 1px solid #3B82F6; /* Акцентна рамка */
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); /* М'яке синє світіння */
+}
+
+.app-alert.error {
+  /* НОВИЙ СТИЛЬ: Фіолетово-рожевий акцент для помилок */
+  background-color: #311B27; /* Дуже темно-фіолетовий */
+  color: #FFB6C1; /* Світло-рожевий текст */
+  border: 1px solid #CC4B7B; /* Насичений рожевий для рамки */
+  box-shadow: 0 0 15px rgba(204, 75, 123, 0.5); /* М'яке рожеве світіння */
+}
+
+/* Іконки тепер використовують кольори тексту */
+.app-alert::before {
+  content: ''; 
+  font-family: 'Font Awesome 5 Free'; 
+  font-weight: 900;
+  margin-right: 5px;
+  font-size: 1.2em;
+}
+.app-alert.success::before {
+  content: '✓'; 
+  color: inherit;
+}
+.app-alert.error::before {
+  content: '✕'; 
+  color: inherit;
+}
+
+/* --- СТИЛІ ДЛЯ МОДАЛКИ ПІДТВЕРДЖЕННЯ (CONFIRM) --- */
+
+.confirm-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8); 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 4000;
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.confirm-modal-content {
+  background: var(--box-bg); 
+  padding: 35px 40px;
+  border-radius: 15px;
+  max-width: 450px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.confirm-modal-content h4 {
+  color: var(--text-color);
+  margin-top: 0;
+  margin-bottom: 30px;
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.confirm-actions button {
+  padding: 12px 25px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.confirm-actions .btn-confirm {
+  /* ПІДТВЕРДЖЕННЯ (Confirm): Ваш Акцентний Градієнт */
+  background: var(--accent-gradient); 
+  color: var(--accent-text);
+}
+.confirm-actions .btn-confirm:hover {
+  background: var(--accent-hover-gradient);
+  transform: translateY(-2px);
+}
+
+.confirm-actions .btn-cancel {
+  /* ВІДМІНА (Cancel): Колір поверхні */
+  background: var(--surface-hover); 
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+.confirm-actions .btn-cancel:hover {
+  background: #374151;
+  transform: translateY(-2px);
+}
+
+/* --- Анімації --- */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
