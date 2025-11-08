@@ -9,8 +9,20 @@ import movieRoutes from './routes/movies.js';
 dotenv.config();
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
+
+// Збільшуємо ліміт для base64 зображень
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // маршрути
 app.use('/api/auth', authRoutes);
