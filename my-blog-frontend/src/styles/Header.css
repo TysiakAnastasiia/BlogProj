@@ -36,8 +36,8 @@ body, html {
 .search-dropdown {
   position: absolute;
   top: 40px;
-  left: 0;
-  width: 100%;
+  left: 535px;
+  width: 30%;
   max-height: 250px;
   overflow-y: auto;
   background-color: #fff;

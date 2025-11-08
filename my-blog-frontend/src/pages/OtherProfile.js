@@ -17,15 +17,29 @@ function OtherProfilePage() {
       if (!userId) return;
       try {
         const token = localStorage.getItem("token");
+        if (!token) return navigate("/login");
+
+        // Отримуємо свій профіль
+        const meRes = await axios.get(`http://localhost:5000/api/users/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // Якщо шуканий userId — це твій власний, редірект на /profile
+        if (meRes.data.id.toString() === userId) {
+          return navigate("/profile");
+        }
+
+        // Інакше завантажуємо дані іншого користувача
         const res = await axios.get(`http://localhost:5000/api/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+
         setUser({
           ...res.data,
           avatar: res.data.avatar_url || "https://i.imgur.com/3GvwNBf.png",
         });
         setPosts(res.data.posts || []);
-        setFollowing(res.data.isFollowing || false); // сервер має віддавати, чи ми вже підписані
+        setFollowing(res.data.isFollowing || false);
       } catch (err) {
         console.error("Помилка при завантаженні користувача:", err);
         alert("User not found");
@@ -56,7 +70,7 @@ function OtherProfilePage() {
       }
 
       setFollowing(!following);
-      // Можна оновити лічильник followers локально:
+      // Оновлюємо лічильник followers локально
       setUser(prev => ({
         ...prev,
         followers: prev.followers + (following ? -1 : 1),
@@ -101,10 +115,12 @@ function OtherProfilePage() {
             <div><strong>{user.following || 0}</strong> follow</div>
           </div>
           <div className="profile-actions">
-            <button onClick={handleFollowToggle}>
+            <button className="small-button" onClick={handleFollowToggle}>
               {following ? "Unfollow" : "Follow"}
             </button>
-            <button onClick={handleSendMessage}>Send Message</button>
+            <button className="small-button" onClick={handleSendMessage}>
+              Send Message
+            </button>
           </div>
         </div>
       </section>
