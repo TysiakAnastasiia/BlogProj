@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import "../styles/Dashboard.css";
 import defaultImage from "../styles/def.png"; 
 import api from "../api"; 
-import Header from "./Header";
+import Header from "./Header.js";
 import "../styles/Header.css";
 
 const CustomAlert = ({ message, type, onClose }) => {
