@@ -1,7 +1,9 @@
 import axios from "axios";
 
-const API_URL = "/api";
+// Базовий URL API
+const API_URL = process.env.REACT_APP_API_URL || "https://blogproj-p8pr.onrender.com/api";
 
+// ------------------ AUTH ------------------
 export const register = async (userData) => {
   const res = await axios.post(`${API_URL}/auth/register`, userData);
   return res.data;
@@ -12,6 +14,7 @@ export const login = async (credentials) => {
   return res.data;
 };
 
+// ------------------ USERS ------------------
 export const getProfile = async (token) => {
   const res = await axios.get(`${API_URL}/users/me`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -47,9 +50,10 @@ export const unfollowUser = async (userId, token) => {
   return res.data;
 };
 
+// ------------------ POSTS ------------------
 export const getPosts = async (userId, search) => {
   const res = await axios.get(`${API_URL}/posts`, {
-    params: { userId: userId, search: search } 
+    params: { userId, search },
   });
   return res.data;
 };
@@ -75,10 +79,10 @@ export const deletePost = async (id, token) => {
   return res.data;
 };
 
-
+// ------------------ MOVIES ------------------
 export const getMovies = async (userId, search) => {
   const res = await axios.get(`${API_URL}/movies`, {
-    params: { userId: userId, search: search } 
+    params: { userId, search },
   });
   return res.data;
 };
@@ -104,13 +108,12 @@ export const deleteMovie = async (id, token) => {
   return res.data;
 };
 
-
+// ------------------ LIKES ------------------
 export const addLike = async (likeData, token) => {
-  console.log('API addLike called with:', { likeData, token: token ? 'exists' : 'missing' });
   const res = await axios.post(`${API_URL}/likes`, likeData, {
     headers: { 
       Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
   });
   return res.data;
@@ -123,6 +126,7 @@ export const removeLike = async (postId, itemType, token) => {
   return res.data;
 };
 
+// ------------------ COMMENTS ------------------
 export const addComment = async (commentData, token) => {
   const res = await axios.post(`${API_URL}/comments`, commentData, {
     headers: { Authorization: `Bearer ${token}` },
@@ -137,7 +141,7 @@ export const removeComment = async (commentId, token) => {
   return res.data;
 };
 
-
+// ------------------ Експорт ------------------
 export default {
   register,
   login,
