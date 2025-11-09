@@ -1,7 +1,9 @@
 # Node modules
 node_modules/
+server/node_modules/
+my-blog-frontend/node_modules/
 
-# Env variables
+# Env variables (СЕКРЕТИ)
 .env
 
 # Logs
@@ -16,6 +18,4 @@ Thumbs.db
 # Build/output folders
 dist/
 build/
-
-db.js
-config.js
+my-blog-frontend/build/
