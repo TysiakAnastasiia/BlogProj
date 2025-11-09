@@ -1,6 +1,8 @@
 import pool from "../models/db.js";
 import bcrypt from "bcryptjs";
 
+// --- ФУНКЦІЇ ДЛЯ ПІДПИСКИ ---
+
 export const followUser = async (req, res) => {
   const followerId = req.user.id;
   const followingId = req.params.id;
@@ -59,9 +61,9 @@ export const getUserById = async (req, res) => {
   const viewerId = req.user.id;
 
   try {
+    // ВИПРАВЛЕНО: Прибрано зайві відступи, що викликали ER_PARSE_ERROR
     const [rows] = await pool.query(
-      `SELECT 
-        u.id, u.first_name, u.last_name, u.username, u.email, u.phone, u.birth_date, u.avatar_url, u.created_at,
+      `SELECT u.id, u.first_name, u.last_name, u.username, u.email, u.phone, u.birth_date, u.avatar_url, u.created_at,
         (SELECT COUNT(*) FROM follows WHERE following_id = u.id) AS followers,
         (SELECT COUNT(*) FROM follows WHERE follower_id = u.id) AS following,
         (SELECT COUNT(*) FROM follows WHERE follower_id = ? AND following_id = u.id) > 0 AS isFollowing
@@ -74,10 +76,9 @@ export const getUserById = async (req, res) => {
       return res.status(404).json({ message: "Користувача не знайдено" });
     }
 
-    // Отримуємо ТІЛЬКИ пости цього користувача
+    // ВИПРАВЛЕНО: Прибрано зайві відступи
     const [posts] = await pool.query(
-      `SELECT 
-        p.id, p.title, p.content, p.image, p.created_at, p.user_id,
+      `SELECT p.id, p.title, p.content, p.image, p.created_at, p.user_id,
         (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id AND l.item_type = 'post') AS likes
       FROM posts p 
       WHERE p.user_id = ? 
@@ -85,10 +86,9 @@ export const getUserById = async (req, res) => {
       [profileId]
     );
 
-    // Отримуємо ТІЛЬКИ movies цього користувача
+    // ВИПРАВЛЕНО: Прибрано зайві відступи
     const [movies] = await pool.query(
-      `SELECT 
-        m.id, m.title, m.genre, m.year, m.image, m.created_at, m.user_id,
+      `SELECT m.id, m.title, m.genre, m.year, m.image, m.created_at, m.user_id,
         (SELECT COUNT(*) FROM likes l WHERE l.post_id = m.id AND l.item_type = 'movie') AS likes
       FROM movies m 
       WHERE m.user_id = ? 
@@ -116,9 +116,9 @@ export const getMe = async (req, res) => {
   try {
     console.log("🔍 Getting profile for user ID:", userId);
 
+    // ВИПРАВЛЕНО: Прибрано зайві відступи, що викликали ER_PARSE_ERROR
     const [rows] = await pool.query(
-      `SELECT 
-        u.id, u.first_name, u.last_name, u.username, u.email, u.phone, u.birth_date, u.avatar_url, u.created_at,
+      `SELECT u.id, u.first_name, u.last_name, u.username, u.email, u.phone, u.birth_date, u.avatar_url, u.created_at,
         (SELECT COUNT(*) FROM follows WHERE following_id = u.id) AS followers,
         (SELECT COUNT(*) FROM follows WHERE follower_id = u.id) AS following
       FROM users u
@@ -130,10 +130,9 @@ export const getMe = async (req, res) => {
       return res.status(404).json({ message: "Користувача не знайдено" });
     }
 
-    // Отримуємо ТІЛЬКИ пости цього користувача
+    // ВИПРАВЛЕНО: Прибрано зайві відступи
     const [posts] = await pool.query(
-      `SELECT 
-        p.id, p.title, p.content, p.image, p.created_at, p.user_id,
+      `SELECT p.id, p.title, p.content, p.image, p.created_at, p.user_id,
         (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id AND l.item_type = 'post') AS likes
       FROM posts p 
       WHERE p.user_id = ? 
@@ -141,9 +140,9 @@ export const getMe = async (req, res) => {
       [userId]
     );
 
+    // ВИПРАВЛЕНО: Прибрано зайві відступи
     const [movies] = await pool.query(
-      `SELECT 
-        m.id, m.title, m.genre, m.year, m.image, m.created_at, m.user_id,
+      `SELECT m.id, m.title, m.genre, m.year, m.image, m.created_at, m.user_id,
         (SELECT COUNT(*) FROM likes l WHERE l.post_id = m.id AND l.item_type = 'movie') AS likes
       FROM movies m 
       WHERE m.user_id = ? 
