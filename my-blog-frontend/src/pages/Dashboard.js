@@ -130,7 +130,6 @@ function Dashboard() {
     setItemInEditor({ type: contentType === "posts" ? "post" : "movie", title: "", content: "", genre: "", year: "", image: null });
   };
 
-  // НОВА ФУНКЦІЯ: Валідація полів контенту та зображень
   const validateContent = () => {
     if (!itemInEditor.title || itemInEditor.title.trim().length < 3) {
       showAlert("Title must be at least 3 characters long.", 'error');
@@ -142,8 +141,7 @@ function Dashboard() {
       return false;
     }
     
-    // Перевірка розміру зображення (для base64)
-    if (itemInEditor.image && itemInEditor.image.length > 5 * 1024 * 1024) { // 5MB limit
+    if (itemInEditor.image && itemInEditor.image.length > 5 * 1024 * 1024) {
       showAlert("Image size is too large (max 5MB).", 'error');
       return false;
     }
@@ -220,22 +218,53 @@ function Dashboard() {
   };
 
   const handleEditClick = (postToEdit) => {
-    setContentType(postToEdit.genre ? "movies" : "posts");
+    const isMovie = ('genre' in postToEdit) || ('year' in postToEdit);
+    const itemType = isMovie ? "movies" : "posts";
+    
+    console.log('📝 Editing item:', { 
+      id: postToEdit.id, 
+      hasGenre: 'genre' in postToEdit,
+      genreValue: postToEdit.genre,
+      hasYear: 'year' in postToEdit,
+      itemType 
+    });
+    
+    setContentType(itemType);
     setItemInEditor({
         ...postToEdit,
-        image: postToEdit.image || postToEdit.image_url
+        image: postToEdit.image || postToEdit.image_url,
+        type: itemType
     });
     setEditModal(true);
     setOpenOptionsPostId(null);
     setIsModalOptionsOpen(false);
   };
   
-  const initiatePostDelete = (postId, postType) => {
-    const itemLabel = postType === 'posts' ? 'post' : 'movie';
+  const initiatePostDelete = (postId, postItem) => {
+    let postType;
+    if (typeof postItem === 'object') {
+      const isMovie = ('genre' in postItem) || ('year' in postItem);
+      postType = isMovie ? 'movies' : 'posts';
+    } else {
+      postType = postItem || contentType;
+    }
+    
+    console.log('🗑️ Initiating delete:', { 
+      postId, 
+      postType,
+      hasGenre: 'genre' in postItem,
+      genreValue: postItem?.genre,
+      hasYear: 'year' in postItem,
+      yearValue: postItem?.year,
+      contentType: contentType
+    });
+    
+    const itemLabel = postType === 'movies' ? 'movie' : 'post';
     setConfirmAction({
       message: `Are you sure you want to delete this ${itemLabel}?`,
       handler: () => executeDeletePost(postId, postType),
-      id: postId
+      id: postId,
+      type: postType 
     });
     setOpenOptionsPostId(null);
     setIsModalOptionsOpen(false);
@@ -247,10 +276,18 @@ function Dashboard() {
       return;
     }
 
-    const deleteFunction = postType === 'posts' ? api.deletePost : api.deleteMovie;
+    console.log('🔥 Executing delete:', { postId, postType, typeOf: typeof postType });
+
+    const isMovie = postType === 'movies';
+    const deleteFunction = isMovie ? api.deleteMovie : api.deletePost;
+    
+    console.log('Using function:', isMovie ? 'api.deleteMovie' : 'api.deletePost');
+    console.log('Delete function:', deleteFunction);
     
     try {
-        await deleteFunction(postId, user.token);
+        const result = await deleteFunction(postId, user.token);
+        console.log('✅ Delete successful:', result);
+        
         setPosts(posts.filter(p => p.id !== postId));
         
         if (selectedPost && selectedPost.id === postId) {
@@ -259,7 +296,9 @@ function Dashboard() {
         showAlert("Item deleted successfully!");
         
     } catch (err) {
-        console.error("Error deleting item:", err);
+        console.error("❌ Error deleting item:", err);
+        console.error("Error response:", err.response?.data);
+        console.error("Request URL:", err.config?.url);
         showAlert(`Error deleting: ${err.response?.data?.message || err.message}`, 'error');
     }
     setConfirmAction(null);
@@ -404,7 +443,10 @@ function Dashboard() {
       {confirmAction && (
         <ConfirmModal 
           message={confirmAction.message}
-          onConfirm={() => confirmAction.handler()}
+          onConfirm={() => {
+            console.log('⚡ Confirming action:', confirmAction);
+            confirmAction.handler();
+          }}
           onCancel={() => setConfirmAction(null)}
         />
       )}
@@ -458,7 +500,7 @@ function Dashboard() {
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
-                      initiatePostDelete(post.id, post.genre ? "movies" : "posts");
+                      initiatePostDelete(post.id, post);
                     }} 
                     className="delete"
                   >
@@ -494,7 +536,7 @@ function Dashboard() {
                   <div className="options-dropdown" onClick={(e) => e.stopPropagation()}>
                     <button onClick={() => handleEditClick(selectedPost)}>Edit</button>
                     <button 
-                      onClick={() => initiatePostDelete(selectedPost.id, selectedPost.genre ? "movies" : "posts")}
+                      onClick={() => initiatePostDelete(selectedPost.id, selectedPost)}
                       className="delete"
                     >
                       Delete

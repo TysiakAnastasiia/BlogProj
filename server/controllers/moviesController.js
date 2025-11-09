@@ -74,9 +74,10 @@ export const getMovieById = async (req, res) => {
 };
 
 export const createMovie = async (req, res) => {
+    
     const { title, genre, year, image, user_id } = req.body; 
     
-    if (!title || title.trim().length < 3) { // ВАЛІДАЦІЯ
+    if (!title || title.trim().length < 3) { 
         return res.status(400).json({ message: "Title must be at least 3 characters long." });
     }
     if (!user_id) {
@@ -101,15 +102,19 @@ export const createMovie = async (req, res) => {
 
 export const updateMovie = async (req, res) => {
     const { id } = req.params;
+    
+    if (!req.user || !req.user.id) { 
+        return res.status(401).json({ message: "Автентифікація користувача відсутня." });
+    }
+    
     const { title, genre, year, image } = req.body;
-    const editorId = req.user.id; // ID з токена
+    const editorId = req.user.id; 
 
-    if (!title || title.trim().length < 3) { // ВАЛІДАЦІЯ
+    if (!title || title.trim().length < 3) { 
         return res.status(400).json({ message: "Title must be at least 3 characters long." });
     }
     
     try {
-        // ПЕРЕВІРКА ВЛАСНОСТІ
         const [movie] = await pool.query("SELECT user_id FROM movies WHERE id = ?", [id]);
         if (movie.length === 0) return res.status(404).json({ message: "Movie not found" });
         if (movie[0].user_id !== editorId) {
@@ -130,10 +135,14 @@ export const updateMovie = async (req, res) => {
 
 export const deleteMovie = async (req, res) => {
     const { id } = req.params;
-    const deleterId = req.user.id; // ID з токена
+    
+    if (!req.user || !req.user.id) { 
+        return res.status(401).json({ message: "Автентифікація користувача відсутня." });
+    }
+    
+    const deleterId = req.user.id; 
 
     try {
-        // ПЕРЕВІРКА ВЛАСНОСТІ
         const [movie] = await pool.query("SELECT user_id FROM movies WHERE id = ?", [id]);
         if (movie.length === 0) return res.status(404).json({ message: "Movie not found" });
         if (movie[0].user_id !== deleterId) {
@@ -142,6 +151,7 @@ export const deleteMovie = async (req, res) => {
         
         await pool.query("DELETE FROM likes WHERE post_id = ? AND item_type = 'movie'", [id]);
         await pool.query("DELETE FROM comments WHERE post_id = ? AND item_type = 'movie'", [id]);
+        
         const [result] = await pool.query("DELETE FROM movies WHERE id=?", [id]);
         
         if (result.affectedRows === 0) {

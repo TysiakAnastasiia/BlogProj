@@ -1,3 +1,6 @@
-# Ігнорування файлу з паролем
-src/db.js
+node_modules/
 .env
+.DS_Store
+server/node_modules/
+my-blog-frontend/node_modules/
+my-blog-frontend/build/
