@@ -12,7 +12,6 @@ import movieRoutes from './routes/movies.js';
 import likeRoutes from './routes/likes.js';
 import commentRoutes from './routes/comments.js';
 
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;

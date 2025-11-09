@@ -1,6 +1,5 @@
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
-dotenv.config();
 
 console.log('DB Config:', {
   host: process.env.DB_HOST,
