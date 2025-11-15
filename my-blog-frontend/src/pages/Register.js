@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { register } from "../api/api";
+import { register } from "../api";
 import "../styles/styles.css";
 import WedImage from "../styles/wed.jpg";
 import AvaImage from "../styles/ava.jpg";
