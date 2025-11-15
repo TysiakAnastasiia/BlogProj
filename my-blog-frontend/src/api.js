@@ -1,7 +1,25 @@
 import axios from "axios";
 
-// Базовий URL API
-const API_URL = process.env.REACT_APP_API_URL || "https://blogproj-p8pr.onrender.com/api";
+// Оскільки фронт і бек на одному домені, використовуємо відносні URL
+const API_URL = "/api";
+
+// Налаштування axios
+axios.defaults.baseURL = API_URL;
+axios.defaults.headers.common['Content-Type'] = 'application/json';
+
+// Interceptor для логування помилок
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    return Promise.reject(error);
+  }
+);
 
 // ------------------ AUTH ------------------
 export const register = async (userData) => {

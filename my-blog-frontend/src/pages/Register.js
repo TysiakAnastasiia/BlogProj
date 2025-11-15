@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { register } from "../api/api";
 import "../styles/styles.css";
 import WedImage from "../styles/wed.jpg";
 import AvaImage from "../styles/ava.jpg";
-import axios from "axios";
 
 const CustomAlert = ({ message, type, onClose }) => {
   const [show, setShow] = useState(false);
@@ -32,6 +32,7 @@ function Register() {
   const navigate = useNavigate();
   const [alertMessage, setAlertMessage] = useState(null);
   const [alertType, setAlertType] = useState('success');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const showAlert = (message, type = 'success') => {
     setAlertType(type);
@@ -39,7 +40,6 @@ function Register() {
   };
   
   const closeAlert = () => setAlertMessage(null);
-
 
   const [form, setForm] = useState({
     first_name: "",
@@ -85,14 +85,29 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
+    
+    if (isSubmitting) return; // Запобігаємо подвійній відправці
+    setIsSubmitting(true);
 
     try {
-      await axios.post("http://localhost:5000/api/auth/register", form);
-      showAlert("User created successfully!", 'success'); 
-      navigate("/login");
+      const response = await register(form);
+      console.log('Registration successful:', response);
+      showAlert("User created successfully!", 'success');
+      
+      // Затримка перед редиректом, щоб користувач побачив повідомлення
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
+      
     } catch (err) {
-      console.error(err.response?.data);
-      showAlert(err.response?.data.message || "Registration failed", 'error'); 
+      console.error('Registration error:', err);
+      const errorMessage = err.response?.data?.message 
+        || err.response?.data?.error 
+        || err.message 
+        || "Registration failed. Please try again.";
+      showAlert(errorMessage, 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -105,40 +120,88 @@ function Register() {
         <form onSubmit={handleSubmit}>
           <div className="input-group">
             <label htmlFor="first_name">FIRST NAME</label>
-            <input type="text" id="first_name" value={form.first_name} onChange={handleChange} />
+            <input 
+              type="text" 
+              id="first_name" 
+              value={form.first_name} 
+              onChange={handleChange}
+              disabled={isSubmitting}
+            />
           </div>
 
           <div className="input-group">
             <label htmlFor="last_name">LAST NAME</label>
-            <input type="text" id="last_name" value={form.last_name} onChange={handleChange} />
+            <input 
+              type="text" 
+              id="last_name" 
+              value={form.last_name} 
+              onChange={handleChange}
+              disabled={isSubmitting}
+            />
           </div>
 
           <div className="input-group">
             <label htmlFor="username">USERNAME</label>
-            <input type="text" id="username" value={form.username} onChange={handleChange} />
+            <input 
+              type="text" 
+              id="username" 
+              value={form.username} 
+              onChange={handleChange}
+              disabled={isSubmitting}
+            />
           </div>
 
           <div className="input-group">
             <label htmlFor="birth_date">DATE OF BIRTH</label>
-            <input type="date" id="birth_date" value={form.birth_date} onChange={handleChange} />
+            <input 
+              type="date" 
+              id="birth_date" 
+              value={form.birth_date} 
+              onChange={handleChange}
+              disabled={isSubmitting}
+            />
           </div>
 
           <div className="input-group">
             <label htmlFor="email">EMAIL</label>
-            <input type="email" id="email" value={form.email} onChange={handleChange} />
+            <input 
+              type="email" 
+              id="email" 
+              value={form.email} 
+              onChange={handleChange}
+              disabled={isSubmitting}
+            />
           </div>
 
           <div className="input-group">
             <label htmlFor="phone">PHONE</label>
-            <input type="text" id="phone" value={form.phone} onChange={handleChange} />
+            <input 
+              type="text" 
+              id="phone" 
+              value={form.phone} 
+              onChange={handleChange}
+              disabled={isSubmitting}
+            />
           </div>
 
           <div className="input-group">
             <label htmlFor="password">PASSWORD</label>
-            <input type="password" id="password" value={form.password} onChange={handleChange} />
+            <input 
+              type="password" 
+              id="password" 
+              value={form.password} 
+              onChange={handleChange}
+              disabled={isSubmitting}
+            />
           </div>
 
-          <button type="submit" className="submit-btn">SUBMIT</button>
+          <button 
+            type="submit" 
+            className="submit-btn"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'SUBMITTING...' : 'SUBMIT'}
+          </button>
         </form>
 
         <p style={{ marginTop: "10px" }}>
