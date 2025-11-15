@@ -1,9 +1,5 @@
 import axios from "axios";
 
-// Налаштування базового URL для axios
-axios.defaults.baseURL = '/api';
-axios.defaults.headers.common['Content-Type'] = 'application/json';
-
 // Interceptor для логування помилок
 axios.interceptors.response.use(
   (response) => response,
@@ -20,46 +16,46 @@ axios.interceptors.response.use(
 
 // ------------------ AUTH ------------------
 export const register = async (userData) => {
-  const res = await axios.post('/auth/register', userData);
+  const res = await axios.post('/api/auth/register', userData);
   return res.data;
 };
 
 export const login = async (credentials) => {
-  const res = await axios.post('/auth/login', credentials);
+  const res = await axios.post('/api/auth/login', credentials);
   return res.data;
 };
 
 // ------------------ USERS ------------------
 export const getProfile = async (token) => {
-  const res = await axios.get('/users/me', {
+  const res = await axios.get('/api/users/me', {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
 };
 
 export const updateProfile = async (token, userData) => {
-  const res = await axios.put('/users/me', userData, {
+  const res = await axios.put('/api/users/me', userData, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
 };
 
 export const getUserById = async (userId, token) => {
-  const res = await axios.get(`/users/${userId}`, {
+  const res = await axios.get(`/api/users/${userId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
 };
 
 export const followUser = async (userId, token) => {
-  const res = await axios.post(`/users/${userId}/follow`, {}, {
+  const res = await axios.post(`/api/users/${userId}/follow`, {}, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
 };
 
 export const unfollowUser = async (userId, token) => {
-  const res = await axios.post(`/users/${userId}/unfollow`, {}, {
+  const res = await axios.post(`/api/users/${userId}/unfollow`, {}, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
@@ -67,28 +63,28 @@ export const unfollowUser = async (userId, token) => {
 
 // ------------------ POSTS ------------------
 export const getPosts = async (userId, search) => {
-  const res = await axios.get('/posts', {
+  const res = await axios.get('/api/posts', {
     params: { userId, search },
   });
   return res.data;
 };
 
 export const createPost = async (postData, token) => {
-  const res = await axios.post('/posts', postData, {
+  const res = await axios.post('/api/posts', postData, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
 };
 
 export const updatePost = async (id, postData, token) => {
-  const res = await axios.put(`/posts/${id}`, postData, {
+  const res = await axios.put(`/api/posts/${id}`, postData, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
 };
 
 export const deletePost = async (id, token) => {
-  const res = await axios.delete(`/posts/${id}`, {
+  const res = await axios.delete(`/api/posts/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
@@ -96,28 +92,28 @@ export const deletePost = async (id, token) => {
 
 // ------------------ MOVIES ------------------
 export const getMovies = async (userId, search) => {
-  const res = await axios.get('/movies', {
+  const res = await axios.get('/api/movies', {
     params: { userId, search },
   });
   return res.data;
 };
 
 export const createMovie = async (movieData, token) => {
-  const res = await axios.post('/movies', movieData, {
+  const res = await axios.post('/api/movies', movieData, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
 };
 
 export const updateMovie = async (id, movieData, token) => {
-  const res = await axios.put(`/movies/${id}`, movieData, {
+  const res = await axios.put(`/api/movies/${id}`, movieData, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
 };
 
 export const deleteMovie = async (id, token) => {
-  const res = await axios.delete(`/movies/${id}`, {
+  const res = await axios.delete(`/api/movies/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
@@ -125,7 +121,7 @@ export const deleteMovie = async (id, token) => {
 
 // ------------------ LIKES ------------------
 export const addLike = async (likeData, token) => {
-  const res = await axios.post('/likes', likeData, {
+  const res = await axios.post('/api/likes', likeData, {
     headers: { 
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -135,7 +131,7 @@ export const addLike = async (likeData, token) => {
 };
 
 export const removeLike = async (postId, itemType, token) => {
-  const res = await axios.delete(`/likes/${itemType}/${postId}`, {
+  const res = await axios.delete(`/api/likes/${itemType}/${postId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
@@ -143,14 +139,14 @@ export const removeLike = async (postId, itemType, token) => {
 
 // ------------------ COMMENTS ------------------
 export const addComment = async (commentData, token) => {
-  const res = await axios.post('/comments', commentData, {
+  const res = await axios.post('/api/comments', commentData, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
 };
 
 export const removeComment = async (commentId, token) => {
-  const res = await axios.delete(`/comments/${commentId}`, {
+  const res = await axios.delete(`/api/comments/${commentId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
