@@ -12,19 +12,15 @@ export const followUser = async (req, res) => {
   }
 
   try {
-    const [existing] = await pool.query(
-      "SELECT * FROM follows WHERE follower_id = ? AND following_id = ?",
+    // У Postgres можна використовувати ON CONFLICT, щоб уникнути зайвого SELECT
+    const { rowCount } = await pool.query(
+      "INSERT INTO follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
       [followerId, followingId]
     );
 
-    if (existing.length > 0) {
+    if (rowCount === 0) {
       return res.status(400).json({ message: "Ви вже підписані на цього користувача" });
     }
-
-    await pool.query(
-      "INSERT INTO follows (follower_id, following_id) VALUES (?, ?)",
-      [followerId, followingId]
-    );
 
     res.status(201).json({ message: "Підписка успішно створена" });
   } catch (error) {
@@ -38,184 +34,81 @@ export const unfollowUser = async (req, res) => {
   const followingId = req.params.id;
 
   try {
-    const [result] = await pool.query(
-      "DELETE FROM follows WHERE follower_id = ? AND following_id = ?",
+    const { rowCount } = await pool.query(
+      "DELETE FROM follows WHERE follower_id = $1 AND following_id = $2",
       [followerId, followingId]
     );
 
-    if (result.affectedRows === 0) {
-      return res.status(400).json({ message: "Ви не були підписані на цього користувача" });
+    if (rowCount === 0) {
+      return res.status(404).json({ message: "Підписку не знайдено" });
     }
 
-    res.status(200).json({ message: "Підписка успішно скасована" });
+    res.json({ message: "Ви відписалися від користувача" });
   } catch (error) {
-    console.error("Помилка при відписці:", error);
-    res.status(500).json({ message: "Помилка сервера" });
+    res.status(500).json({ message: "Помилка сервера", error: error.message });
   }
 };
 
+// --- ПРОФІЛЬ ТА КОРИСТУВАЧІ ---
 
-// --- ОНОВЛЕНІ ФУНКЦІЇ ОТРИМАННЯ ДАНИХ ---
-
-// Отримати користувача за ID (для сторінки іншого користувача)
-export const getUserById = async (req, res) => {
-  const profileId = req.params.id;
-  const viewerId = req.user.id;
-
+export const getUserProfile = async (req, res) => {
+  const userId = req.params.id;
   try {
-    const [rows] = await pool.query(
-      `SELECT 
-        u.id, u.first_name, u.last_name, u.username, u.email, u.phone, u.birth_date, u.avatar_url, u.created_at,
-        (SELECT COUNT(*) FROM follows WHERE following_id = u.id) AS followers,
-        (SELECT COUNT(*) FROM follows WHERE follower_id = u.id) AS following,
-        (SELECT COUNT(*) FROM follows WHERE follower_id = ? AND following_id = u.id) > 0 AS isFollowing
-      FROM users u
-      WHERE u.id = ?`,
-      [viewerId, profileId]
+    const { rows: userRows } = await pool.query(
+      "SELECT id, first_name, last_name, username, email, phone, birth_date, avatar_url, created_at FROM users WHERE id = $1",
+      [userId]
     );
 
-    if (rows.length === 0) {
+    if (userRows.length === 0) {
       return res.status(404).json({ message: "Користувача не знайдено" });
     }
 
-    // Отримуємо ТІЛЬКИ пости цього користувача
-    const [posts] = await pool.query(
-      `SELECT 
-        p.id, p.title, p.content, p.image, p.created_at, p.user_id,
-        (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id AND l.item_type = 'post') AS likes
-      FROM posts p 
-      WHERE p.user_id = ? 
-      ORDER BY p.created_at DESC`, 
-      [profileId]
-    );
+    const user = userRows[0];
 
-    // Отримуємо ТІЛЬКИ movies цього користувача
-    const [movies] = await pool.query(
-      `SELECT 
-        m.id, m.title, m.genre, m.year, m.image, m.created_at, m.user_id,
-        (SELECT COUNT(*) FROM likes l WHERE l.post_id = m.id AND l.item_type = 'movie') AS likes
-      FROM movies m 
-      WHERE m.user_id = ? 
-      ORDER BY m.created_at DESC`, 
-      [profileId]
-    );
+    // Підрахунок фоловерів та підписок
+    const { rows: followers } = await pool.query("SELECT COUNT(*) FROM follows WHERE following_id = $1", [userId]);
+    const { rows: following } = await pool.query("SELECT COUNT(*) FROM follows WHERE follower_id = $1", [userId]);
 
-    const user = rows[0];
-    user.isFollowing = !!user.isFollowing;
-    user.posts = posts;
-    user.movies = movies;
-    user.watched = movies.length;
-
-    res.json(user);
-
+    res.json({
+      ...user,
+      followersCount: parseInt(followers[0].count),
+      followingCount: parseInt(following[0].count),
+    });
   } catch (error) {
-    console.error("Помилка при отриманні користувача:", error);
-    res.status(500).json({ message: "Помилка сервера" });
+    res.status(500).json({ message: "Помилка сервера", error: error.message });
   }
 };
 
-// Отримати власний профіль (на основі токена)
-export const getMe = async (req, res) => {
+export const updateProfile = async (req, res) => {
   const userId = req.user.id;
+  const { first_name, last_name, username, email, phone, birth_date, avatar, password } = req.body;
+
   try {
-    console.log("🔍 Getting profile for user ID:", userId);
-
-    const [rows] = await pool.query(
-      `SELECT 
-        u.id, u.first_name, u.last_name, u.username, u.email, u.phone, u.birth_date, u.avatar_url, u.created_at,
-        (SELECT COUNT(*) FROM follows WHERE following_id = u.id) AS followers,
-        (SELECT COUNT(*) FROM follows WHERE follower_id = u.id) AS following
-      FROM users u
-      WHERE u.id = ?`,
-      [userId]
-    );
-
-    if (rows.length === 0) {
-      return res.status(404).json({ message: "Користувача не знайдено" });
-    }
-
-    // Отримуємо ТІЛЬКИ пости цього користувача
-    const [posts] = await pool.query(
-      `SELECT 
-        p.id, p.title, p.content, p.image, p.created_at, p.user_id,
-        (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id AND l.item_type = 'post') AS likes
-      FROM posts p 
-      WHERE p.user_id = ? 
-      ORDER BY p.created_at DESC`, 
-      [userId]
-    );
-
-    // Отримуємо ТІЛЬКИ movies цього користувача
-    const [movies] = await pool.query(
-      `SELECT 
-        m.id, m.title, m.genre, m.year, m.image, m.created_at, m.user_id,
-        (SELECT COUNT(*) FROM likes l WHERE l.post_id = m.id AND l.item_type = 'movie') AS likes
-      FROM movies m 
-      WHERE m.user_id = ? 
-      ORDER BY m.created_at DESC`, 
-      [userId]
-    );
-
-    const user = rows[0];
-    user.posts = posts;
-    user.movies = movies;
-    user.watched = movies.length;
-
-    console.log("✅ Profile found with", posts.length, "posts and", movies.length, "movies");
-    res.json(user);
-  } catch (error) {
-    console.error("❌ Помилка при отриманні профілю:", error);
-    res.status(500).json({ message: "Помилка сервера" });
-  }
-};
-
-// Оновити профіль
-export const updateUser = async (req, res) => {
-  try {
-    let userId;
-    if (req.path === "/me" || req.route.path === "/me") {
-      userId = req.user.id;
-    } else {
-      userId = parseInt(req.params.id);
-    }
-    
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
-    }
-    
-    const { first_name, last_name, username, email, phone, birth_date, avatar, password } = req.body;
-
-    if (req.path !== "/me" && req.route.path !== "/me" && parseInt(req.user.id) !== parseInt(userId)) {
-      return res.status(403).json({ message: "Ви не маєте прав редагувати цей профіль" });
-    }
-
     let hashedPassword = null;
-    if (password && password.trim() !== "") {
+    if (password) {
       hashedPassword = await bcrypt.hash(password, 10);
     }
 
+    let updateQuery;
+    let params;
+
     if (hashedPassword) {
-      await pool.query(
-        `UPDATE users
-         SET first_name=?, last_name=?, username=?, email=?, phone=?, birth_date=?, avatar_url=?, password=?
-         WHERE id=?`,
-        [first_name, last_name, username, email, phone, birth_date, avatar, hashedPassword, userId]
-      );
+      updateQuery = `
+        UPDATE users
+        SET first_name=$1, last_name=$2, username=$3, email=$4, phone=$5, birth_date=$6, avatar_url=$7, password=$8
+        WHERE id=$9 RETURNING id, first_name, last_name, username, email, phone, birth_date, avatar_url, created_at`;
+      params = [first_name, last_name, username, email, phone, birth_date, avatar, hashedPassword, userId];
     } else {
-      await pool.query(
-        `UPDATE users
-         SET first_name=?, last_name=?, username=?, email=?, phone=?, birth_date=?, avatar_url=?
-         WHERE id=?`,
-        [first_name, last_name, username, email, phone, birth_date, avatar, userId]
-      );
+      updateQuery = `
+        UPDATE users
+        SET first_name=$1, last_name=$2, username=$3, email=$4, phone=$5, birth_date=$6, avatar_url=$7
+        WHERE id=$8 RETURNING id, first_name, last_name, username, email, phone, birth_date, avatar_url, created_at`;
+      params = [first_name, last_name, username, email, phone, birth_date, avatar, userId];
     }
 
-    const [updatedUser] = await pool.query(
-      "SELECT id, first_name, last_name, username, email, phone, birth_date, avatar_url, created_at FROM users WHERE id = ?",
-      [userId]
-    );
+    const { rows } = await pool.query(updateQuery, params);
 
-    res.json({ message: "Профіль оновлено успішно", user: updatedUser[0] });
+    res.json({ message: "Профіль оновлено успішно", user: rows[0] });
   } catch (error) {
     console.error("❌ Помилка оновлення профілю:", error);
     res.status(500).json({ message: "Помилка оновлення профілю", error: error.message });
@@ -223,13 +116,19 @@ export const updateUser = async (req, res) => {
 };
 
 export const getAllUsers = async (req, res) => {
+  const { search } = req.query;
   try {
-    const [users] = await pool.query(
-      "SELECT id, first_name, last_name, username, email, phone, birth_date, avatar_url, created_at FROM users"
-    );
-    res.json(users);
+    let query = "SELECT id, username, first_name, last_name, avatar_url FROM users";
+    const params = [];
+
+    if (search) {
+      query += " WHERE username ILIKE $1 OR first_name ILIKE $1 OR last_name ILIKE $1";
+      params.push(`%${search}%`);
+    }
+
+    const { rows } = await pool.query(query, params);
+    res.json(rows);
   } catch (error) {
-    console.error("Помилка при отриманні користувачів:", error);
-    res.status(500).json({ message: "Помилка сервера" });
+    res.status(500).json({ message: "Помилка отримання користувачів", error: error.message });
   }
 };

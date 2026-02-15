@@ -12,44 +12,48 @@ router.post('/', verifyToken, async (req, res) => {
     const { post_id, content, item_type } = req.body;
     const author_id = req.user.id; 
 
-    const [insertResult] = await pool.query(
-      'INSERT INTO comments (post_id, author_id, content, item_type) VALUES (?, ?, ?, ?)',
+    // 1. Вставляємо коментар і відразу отримуємо його ID через RETURNING
+    const { rows: insertRows } = await pool.query(
+      'INSERT INTO comments (post_id, author_id, content, item_type) VALUES ($1, $2, $3, $4) RETURNING id',
       [post_id, author_id, content, item_type]
     );
 
-    const newCommentId = insertResult.insertId;
+    const newCommentId = insertRows[0].id;
 
-    const [commentRows] = await pool.query(
+    // 2. Отримуємо повну інформацію про коментар разом з нікнеймом автора для фронтенду
+    const { rows: commentRows } = await pool.query(
       `SELECT 
         c.id, c.post_id, c.author_id, c.content, c.created_at, c.item_type,
         u.username AS author_nickname 
        FROM comments c
        JOIN users u ON c.author_id = u.id
-       WHERE c.id = ?`,
+       WHERE c.id = $1`,
       [newCommentId]
     );
 
     if (commentRows.length === 0) {
       return res.status(404).json({ message: 'Comment created but not found' });
     }
+
     res.status(201).json(commentRows[0]);
 
   } catch (err) {
     console.error('Error adding comment:', err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
 // @route   DELETE api/comments/:id
-// @desc    Видалити коментар
+// @desc    Видалити коментар (тільки власний)
 // @access  Private
 router.delete('/:id', verifyToken, async (req, res) => {
   try {
     const comment_id = req.params.id;
     const user_id = req.user.id; 
 
-    const [comments] = await pool.query(
-      'SELECT author_id FROM comments WHERE id = ?',
+    // 1. Перевіряємо, чи існує коментар і чи належить він поточному користувачу
+    const { rows: comments } = await pool.query(
+      'SELECT author_id FROM comments WHERE id = $1',
       [comment_id]
     );
 
@@ -61,13 +65,14 @@ router.delete('/:id', verifyToken, async (req, res) => {
       return res.status(403).json({ message: 'User not authorized to delete this comment' });
     }
 
-    await pool.query('DELETE FROM comments WHERE id = ?', [comment_id]);
+    // 2. Видаляємо коментар
+    await pool.query('DELETE FROM comments WHERE id = $1', [comment_id]);
 
-    res.json({ message: 'Comment removed' });
+    res.json({ message: 'Comment removed successfully' });
 
   } catch (err) {
     console.error('Error deleting comment:', err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 

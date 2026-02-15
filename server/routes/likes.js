@@ -12,50 +12,52 @@ router.post('/', verifyToken, async (req, res) => {
     const { post_id, item_type } = req.body;
     const user_id = req.user.id;
 
-    console.log('Received like request:', { post_id, item_type, user_id }); 
-
-    const [existingLikes] = await pool.query(
-      'SELECT * FROM likes WHERE post_id = ? AND user_id = ? AND item_type = ?',
+    // 1. Перевірка на дублікат лайка (PostgreSQL використовує $1, $2...)
+    const { rows: existingLikes } = await pool.query(
+      'SELECT * FROM likes WHERE post_id = $1 AND user_id = $2 AND item_type = $3',
       [post_id, user_id, item_type]
     );
 
-    console.log('Existing likes found:', existingLikes.length); 
-
     if (existingLikes.length > 0) {
-      return res.status(400).json({ message: 'Item already liked' });
+      return res.status(400).json({ message: 'Ви вже поставили лайк цьому об\'єкту' });
     }
 
+    // 2. Вставка нового лайка
     await pool.query(
-      'INSERT INTO likes (post_id, user_id, item_type) VALUES (?, ?, ?)',
+      'INSERT INTO likes (post_id, user_id, item_type) VALUES ($1, $2, $3)',
       [post_id, user_id, item_type]
     );
     
-    res.status(201).json({ message: 'Like added' });
+    res.status(201).json({ message: 'Лайк додано' });
 
   } catch (err) {
-    console.error('Error adding like:', err); 
-    console.error('Full error:', err.message, err.sqlMessage); 
-    res.status(500).json({ message: 'Server error', error: err.message });
+    console.error('Помилка при додаванні лайка:', err); 
+    res.status(500).json({ message: 'Помилка сервера', error: err.message });
   }
 });
+
 // @route   DELETE api/likes/:itemType/:postId
-// @desc    Видалити лайк (для post або movie)
+// @desc    Видалити лайк (дизлайк)
 // @access  Private
 router.delete('/:itemType/:postId', verifyToken, async (req, res) => {
   try {
     const { postId, itemType } = req.params; 
     const user_id = req.user.id; 
 
-    await pool.query(
-      'DELETE FROM likes WHERE post_id = ? AND user_id = ? AND item_type = ?',
+    const { rowCount } = await pool.query(
+      'DELETE FROM likes WHERE post_id = $1 AND user_id = $2 AND item_type = $3',
       [postId, user_id, itemType]
     );
 
-    res.json({ message: 'Like removed' });
+    if (rowCount === 0) {
+      return res.status(404).json({ message: 'Лайк не знайдено' });
+    }
+
+    res.json({ message: 'Лайк видалено' });
 
   } catch (err) {
-    console.error('Error removing like:', err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Помилка при видаленні лайка:', err);
+    res.status(500).json({ message: 'Помилка сервера' });
   }
 });
 
