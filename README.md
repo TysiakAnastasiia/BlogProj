@@ -15,16 +15,16 @@
 
   * **Frontend:** React.js, React Router, Axios.
   * **Backend:** Node.js, Express.js.
-  * **Database:** MySQL (через `mysql2/promise`).
+  * **Database:** PostgreSQL.
   * **Security:** JWT, `bcryptjs`, CORS.
 
 ## Як Запустити Проєкт (Локальна Машина)
 
-Для успішного запуску необхідно мати встановлені **Node.js** та **MySQL Server**.
+Для успішного запуску необхідно мати встановлені **Node.js** та **PostgreSQL**.
 
 ### 1\. Конфігурація Бази Даних
 
-1.  Створіть нову базу даних у вашому MySQL-клієнті (наприклад, **`blogdb`**).
+1.  Створіть нову базу даних (наприклад, **`blogdb`**).
 
 2.  Створіть необхідні таблиці. **Важливо:** Таблиці `likes` та `comments` повинні мати колонку **`item_type`** (VARCHAR, 'post' або 'movie').
 
@@ -34,10 +34,9 @@
     PORT=5000
     JWT_SECRET=your_super_secret_key_change_this
 
-    # Конфігурація MySQL
     DB_HOST=localhost
     DB_USER=root
-    DB_PASSWORD=YOUR_MYSQL_PASSWORD
+    DB_PASSWORD=YOUR_PASSWORD
     DB_NAME=blogdb
     ```
 
